@@ -1,5 +1,5 @@
-import gleam/io
+import routing/server
 
 pub fn main() -> Nil {
-  io.println("Hello from routing!")
+  server.serve(fn(segs) { todo })
 }

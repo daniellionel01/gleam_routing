@@ -1,53 +1,15 @@
-pub type Route {
-  Home
-  Profile(id: String)
+pub type Route(a) {
+  Route(path: String, handler: a)
 }
 
-pub fn route_to_path(route: Route) {
-  case route {
-    Home -> "/"
-    Profile(id) -> "/profile/" <> id
-  }
-}
+pub const home_route = Route("/", home)
 
-pub fn segs_to_route(segs: List(String)) -> Result(Route, Nil) {
-  case segs {
-    [] -> Ok(Home)
-    ["profile", id] -> Ok(Profile(id))
-    _ -> Error(Nil)
-  }
-}
-
-pub fn route_to_html(route: Route) -> String {
-  case route {
-    Home -> home()
-    Profile(id) -> profile(id)
-  }
-}
-
-pub fn handler(segs: List(String)) -> String {
-  case segs_to_route(segs) {
-    Ok(route) -> {
-      route_to_html(route)
-    }
-    Error(_) -> "404"
-  }
-}
+pub const profile_route = Route("/profile/$id", profile)
 
 pub fn home() -> String {
-  "
-  <div>
-    <div>Home</div>
-    <a href=\"" <> route_to_path(Profile("me")) <> "\">Profile</a>
-  </div>
-  "
+  todo as "home page html"
 }
 
 pub fn profile(id: String) -> String {
-  "
-  <div>
-    <div>Profile: " <> id <> "</div>
-    <a href=\"" <> route_to_path(Home) <> "\">Home</a>
-  </div>
-  "
+  todo as "profile page html"
 }

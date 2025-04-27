@@ -180,7 +180,7 @@ pub fn main() {
     |> string.join("\n")
   let gen_segs_to_route =
     string.trim(
-      "pub fn segs_to_route(route: Route) -> String {\n"
+      "pub fn segs_to_route(route: Route) -> Result(Route, Nil) {\n"
       <> "  case route {\n"
       <> segs_to_route_cases
       <> "\n    _ -> Error(Nil)\n"

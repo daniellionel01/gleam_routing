@@ -1,15 +1,135 @@
-pub type Route(a) {
-  Route(path: String, handler: a)
+import gleam/list
+import gleam/string
+import gleam/uri
+import justin
+import simplifile
+
+pub type PathSegment {
+  Literal(val: String)
+  Param(name: String)
 }
 
-pub const home_route = Route("/", home)
-
-pub const profile_route = Route("/profile/$id", profile)
-
-pub fn home() -> String {
-  todo as "home page html"
+pub type RouterDefinition {
+  RouterDefinition(
+    alias: String,
+    path: List(PathSegment),
+    module: String,
+    handler: String,
+  )
 }
 
-pub fn profile(id: String) -> String {
-  todo as "profile page html"
+pub fn path_to_segments(path: String) -> List(PathSegment) {
+  path
+  |> uri.path_segments()
+  |> list.map(fn(seg) {
+    case seg {
+      "$" <> param -> Param(param)
+      val -> Literal(val)
+    }
+  })
+}
+
+pub fn main() {
+  let router_definitions =
+    "
+    home    | /            | routing/level_three | level_three.home
+    profile | /profile/$id | routing/level_three | level_three.profile
+"
+  let router_dir = "./src/routing/gen/"
+  let router_path = router_dir <> "router.gleam"
+
+  let lines =
+    router_definitions
+    |> string.trim()
+    |> string.split("\n")
+    |> list.map(string.trim)
+
+  let definitions =
+    lines
+    |> list.map(fn(line) {
+      let assert [alias, path, module, handler] =
+        line
+        |> string.split("|")
+        |> list.map(string.trim)
+      let path = path_to_segments(path)
+      let alias = justin.pascal_case(alias)
+      RouterDefinition(alias, path, module, handler)
+    })
+
+  let gen_imports =
+    definitions
+    |> list.map(fn(def) { "import " <> def.module })
+    |> list.unique()
+    |> string.join("\n")
+
+  let type_variants =
+    definitions
+    |> list.map(fn(def) {
+      let params =
+        def.path
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(_) -> ""
+            Param(name) -> name <> ": String"
+          }
+        })
+        |> list.filter(fn(s) { s != "" })
+        |> string.join(", ")
+
+      "  " <> def.alias <> "(" <> params <> ")"
+    })
+    |> string.join("\n")
+  let gen_type_route = "pub type Route {\n" <> type_variants <> "\n}"
+
+  // Home -> level_three.home()
+  // Profile(id) -> level_three.profile(id)
+  let route_to_html_cases =
+    definitions
+    |> list.map(fn(def) {
+      let params =
+        def.path
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(_) -> ""
+            Param(name) -> name
+          }
+        })
+        |> list.filter(fn(s) { s != "" })
+        |> string.join(", ")
+
+      "    "
+      <> def.alias
+      <> "("
+      <> params
+      <> ") -> "
+      <> def.handler
+      <> "("
+      <> params
+      <> ")"
+    })
+    |> string.join("\n")
+  let gen_route_to_html =
+    string.trim(
+      "pub fn route_to_html(route: Route) -> String {\n"
+      <> "  case route {\n"
+      <> route_to_html_cases
+      <> "\n  }\n"
+      <> "}",
+    )
+
+  let generated_code =
+    gen_imports <> "\n\n" <> gen_type_route <> "\n\n" <> gen_route_to_html
+
+  let _ = simplifile.create_directory_all(router_dir)
+  let _ = simplifile.write(router_path, generated_code)
+
+  Ok(Nil)
+}
+
+pub fn home() {
+  "<div>homepage</div>"
+}
+
+pub fn profile(id: String) {
+  "<div>id: " <> id <> "</div>"
 }

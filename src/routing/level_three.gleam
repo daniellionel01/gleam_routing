@@ -155,17 +155,10 @@ pub fn main() {
       <> "}",
     )
 
-  // pub fn segs_to_route(segs: List(String)) -> Result(Route, Nil) {
-  //   case segs {
-  //     [] -> Ok(Home)
-  //     ["profile", id] -> Ok(Profile(id))
-  //     _ -> Error(Nil)
-  //   }
-  // }
   let segs_to_route_cases =
     definitions
     |> list.map(fn(def) {
-      let params =
+      let params_left =
         def.path
         |> list.map(fn(seg) {
           case seg {
@@ -175,13 +168,38 @@ pub fn main() {
         })
         |> string.join(", ")
 
-      "    [" <> params <> "]" <> " -> " <> "Ok(" <> def.alias <> ")"
+      let params_right =
+        def.path
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(_) -> ""
+            Param(name) -> name
+          }
+        })
+        |> list.filter(fn(s) { s != "" })
+        |> string.join(", ")
+
+      let params_right = case params_right {
+        "" -> ""
+        params_right -> {
+          "(" <> params_right <> ")"
+        }
+      }
+
+      "    ["
+      <> params_left
+      <> "]"
+      <> " -> "
+      <> "Ok("
+      <> def.alias
+      <> params_right
+      <> ")"
     })
     |> string.join("\n")
   let gen_segs_to_route =
     string.trim(
-      "pub fn segs_to_route(route: Route) -> Result(Route, Nil) {\n"
-      <> "  case route {\n"
+      "pub fn segs_to_route(segs: List(String)) -> Result(Route, Nil) {\n"
+      <> "  case segs {\n"
       <> segs_to_route_cases
       <> "\n    _ -> Error(Nil)\n"
       <> "  }\n"

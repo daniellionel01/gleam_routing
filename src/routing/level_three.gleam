@@ -81,8 +81,6 @@ pub fn main() {
     |> string.join("\n")
   let gen_type_route = "pub type Route {\n" <> type_variants <> "\n}"
 
-  // Home -> level_three.home()
-  // Profile(id) -> level_three.profile(id)
   let route_to_html_cases =
     definitions
     |> list.map(fn(def) {
@@ -117,8 +115,89 @@ pub fn main() {
       <> "}",
     )
 
+  let route_to_path_cases =
+    definitions
+    |> list.map(fn(def) {
+      let params =
+        def.path
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(_) -> ""
+            Param(name) -> name
+          }
+        })
+        |> list.filter(fn(s) { s != "" })
+        |> string.join(", ")
+
+      let path =
+        def.path
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(val) -> "\"" <> val <> "/\""
+            Param(name) -> name
+          }
+        })
+        |> string.join(" <> ")
+      let path = case path {
+        "" -> "\"/\""
+        path -> "\"/\" <> " <> path
+      }
+
+      "    " <> def.alias <> "(" <> params <> ") -> " <> path
+    })
+    |> string.join("\n")
+  let gen_route_to_path =
+    string.trim(
+      "pub fn route_to_path(route: Route) -> String {\n"
+      <> "  case route {\n"
+      <> route_to_path_cases
+      <> "\n  }\n"
+      <> "}",
+    )
+
+  // pub fn segs_to_route(segs: List(String)) -> Result(Route, Nil) {
+  //   case segs {
+  //     [] -> Ok(Home)
+  //     ["profile", id] -> Ok(Profile(id))
+  //     _ -> Error(Nil)
+  //   }
+  // }
+  let segs_to_route_cases =
+    definitions
+    |> list.map(fn(def) {
+      let params =
+        def.path
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(val) -> "\"" <> val <> "\""
+            Param(name) -> name
+          }
+        })
+        |> string.join(", ")
+
+      "    [" <> params <> "]" <> " -> " <> "Ok(" <> def.alias <> ")"
+    })
+    |> string.join("\n")
+  let gen_segs_to_route =
+    string.trim(
+      "pub fn segs_to_route(route: Route) -> String {\n"
+      <> "  case route {\n"
+      <> segs_to_route_cases
+      <> "\n    _ -> Error(Nil)\n"
+      <> "  }\n"
+      <> "}",
+    )
+
   let generated_code =
-    gen_imports <> "\n\n" <> gen_type_route <> "\n\n" <> gen_route_to_html
+    gen_imports
+    <> "\n\n"
+    <> gen_type_route
+    <> "\n\n"
+    <> gen_segs_to_route
+    <> "\n\n"
+    <> gen_route_to_html
+    <> "\n\n"
+    <> gen_route_to_path
 
   let _ = simplifile.create_directory_all(router_dir)
   let _ = simplifile.write(router_path, generated_code)

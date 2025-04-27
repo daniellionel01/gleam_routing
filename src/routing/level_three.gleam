@@ -1,3 +1,4 @@
+import filepath
 import gleam/list
 import gleam/string
 import gleam/uri
@@ -29,15 +30,7 @@ pub fn path_to_segments(path: String) -> List(PathSegment) {
   })
 }
 
-pub fn main() {
-  let router_definitions =
-    "
-    home    | /            | routing/level_three | level_three.home
-    profile | /profile/$id | routing/level_three | level_three.profile
-"
-  let router_dir = "./src/routing/gen/"
-  let router_path = router_dir <> "router.gleam"
-
+pub fn main(router_definitions: String, output_path: String) {
   let lines =
     router_definitions
     |> string.trim()
@@ -217,8 +210,9 @@ pub fn main() {
     <> "\n\n"
     <> gen_route_to_path
 
-  let _ = simplifile.create_directory_all(router_dir)
-  let _ = simplifile.write(router_path, generated_code)
+  let output_dir = filepath.directory_name(output_path)
+  let _ = simplifile.create_directory_all(output_dir)
+  let _ = simplifile.write(output_path, generated_code)
 
   Ok(Nil)
 }

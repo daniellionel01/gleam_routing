@@ -35,9 +35,19 @@ pub fn handler(segs: List(String)) -> String {
 }
 
 pub fn home() -> String {
-  todo as "home page html"
+  "
+  <div>
+    <div>Home</div>
+    <a href=\"" <> route_to_path(Profile("me")) <> "\">Profile</a>
+  </div>
+  "
 }
 
-pub fn profile(_id: String) -> String {
-  todo as "profile page html"
+pub fn profile(id: String) -> String {
+  "
+  <div>
+    <div>Profile: " <> id <> "</div>
+    <a href=\"" <> route_to_path(Home) <> "\">Home</a>
+  </div>
+  "
 }

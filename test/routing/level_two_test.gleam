@@ -1,22 +1,19 @@
+import gleam/list
 import gleam/uri
 import gleeunit/should
 import routing/level_two
 
+pub const test_routes: List(level_two.Route) = [
+  level_two.Home,
+  level_two.Profile("1"),
+  level_two.Campaigns(level_two.CampaignsSearch(3, 5)),
+]
+
 pub fn roundtrip_test() {
-  level_two.route_to_path(level_two.Home)
-  |> uri.path_segments()
-  |> level_two.segs_to_route
-  |> should.equal(Ok(level_two.Home))
-
-  let profile = level_two.Profile("1")
-  level_two.route_to_path(profile)
-  |> uri.path_segments()
-  |> level_two.segs_to_route
-  |> should.equal(Ok(profile))
-
-  let campaigns = level_two.Campaigns(level_two.CampaignsSearch(3, 5))
-  level_two.route_to_path(campaigns)
-  |> uri.path_segments()
-  |> level_two.segs_to_route
-  |> should.equal(Ok(campaigns))
+  list.each(test_routes, fn(route) {
+    level_two.route_to_path(route)
+    |> uri.path_segments()
+    |> level_two.segs_to_route
+    |> should.equal(Ok(route))
+  })
 }

@@ -8,6 +8,7 @@
 This is a package to generate a typesafe router for a gleam web server. It generates a gleam file that provides a typesafe wrapper around your type definitions:
 - `Route` type that can be converted to paths
 - `segs_to_route` function to match router segments (f.e. in a wisp server) to the correct `Route`
+- `route_to_html` function to match a `Route` to a handler function to render the HTML
 
 ## Gleam Targets
 

@@ -22,6 +22,16 @@ $ gleam add wayfinder # install package
 $ gleam run -m wayfinder # generate router from definitions
 ```
 
+Wayfinder will look for a `ROUTES.lst` file. That file contains all of your routes and has the following schema:
+```txt
+name | path | module import name | handler call signature
+```
+
+- `name` is the name of the route, which will be converted to a custom type in pascal case. So "home" becomes "Home"
+- `path` is fairly self explanatory. f.e. `/`, `/home`. Parameters are prefixed with a `$`, f.e. `/posts/$id`
+- `module import name`
+- `handler call signature`
+
 ## FAQ
 
 ### Is this production ready?

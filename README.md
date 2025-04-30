@@ -7,6 +7,8 @@
 
 This is a package to generate a typesafe router for a gleam web server. It also provides static analysis to ensure you have not missed adding a route.
 
+It also provides a typesafe method of linking to paths, so you don't link to invalid pages.
+
 Works for both `javascript` and `erlang` target!
 
 ## Usage

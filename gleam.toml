@@ -1,5 +1,5 @@
 name = "wayfinder"
-version = "1.0.0"
+version = "1.0.1"
 
 description = "Typesafe Routing in Gleam"
 licences = ["Apache-2.0"]

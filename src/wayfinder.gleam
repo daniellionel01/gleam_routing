@@ -39,12 +39,13 @@ pub fn route_to_path0(route: Route0) {
 pub fn route_to_path1(route: Route1, p1: String) {
   let path =
     route.path
-    |> list.map(fn(seg) {
+    |> list.map_fold(0, fn(acc, seg) {
       case seg {
-        Literal(val) -> val
-        Param(_) -> "$0"
+        Literal(val) -> #(acc, val)
+        Param(_) -> #(acc + 1, "$" <> int.to_string(acc))
       }
     })
+    |> fn(arg) { arg.1 }
     |> string.join("/")
     |> string.replace("$0", p1)
 
@@ -54,12 +55,13 @@ pub fn route_to_path1(route: Route1, p1: String) {
 pub fn route_to_path2(route: Route2, p1: String, p2: String) {
   let path =
     route.path
-    |> list.index_map(fn(seg, index) {
+    |> list.map_fold(0, fn(acc, seg) {
       case seg {
-        Literal(val) -> val
-        Param(_) -> "$" <> int.to_string(index)
+        Literal(val) -> #(acc, val)
+        Param(_) -> #(acc + 1, "$" <> int.to_string(acc))
       }
     })
+    |> fn(arg) { arg.1 }
     |> string.join("/")
     |> string.replace("$0", p1)
     |> string.replace("$1", p2)
@@ -70,12 +72,13 @@ pub fn route_to_path2(route: Route2, p1: String, p2: String) {
 pub fn route_to_path3(route: Route3, p1: String, p2: String, p3: String) {
   let path =
     route.path
-    |> list.index_map(fn(seg, index) {
+    |> list.map_fold(0, fn(acc, seg) {
       case seg {
-        Literal(val) -> val
-        Param(_) -> "$" <> int.to_string(index)
+        Literal(val) -> #(acc, val)
+        Param(_) -> #(acc + 1, "$" <> int.to_string(acc))
       }
     })
+    |> fn(arg) { arg.1 }
     |> string.join("/")
     |> string.replace("$0", p1)
     |> string.replace("$1", p2)

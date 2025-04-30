@@ -1,3 +1,4 @@
+import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/order
@@ -83,7 +84,19 @@ pub fn route_to_path3(route: Route3, p1: String, p2: String, p3: String) {
   "/" <> path
 }
 
-pub fn wrapper_path(wrapper: Wrapper) {
+fn path_to_string(path: List(PathSegment)) -> String {
+  path
+  |> list.map(fn(segment) {
+    case segment {
+      Literal(val) -> val
+      Param(name) -> "$" <> name
+    }
+  })
+  |> string.join("/")
+  |> fn(path) { "/" <> path }()
+}
+
+fn wrapper_path(wrapper: Wrapper) {
   case wrapper {
     Wrapper0(route) -> route.path
     Wrapper1(route) -> route.path
@@ -91,64 +104,83 @@ pub fn wrapper_path(wrapper: Wrapper) {
   }
 }
 
+fn advance_path(wrapper: Wrapper) -> Wrapper {
+  case wrapper_path(wrapper) {
+    [] -> wrapper
+    [_, ..path] -> {
+      case wrapper {
+        Wrapper0(route) -> Wrapper0(Route0(..route, path: path))
+        Wrapper1(route) -> Wrapper1(Route1(..route, path: path))
+        Wrapper2(route) -> Wrapper2(Route2(..route, path: path))
+      }
+    }
+  }
+}
+
+fn sort_by_first_segment(a: Wrapper, b: Wrapper) -> order.Order {
+  case list.first(wrapper_path(a)), list.first(wrapper_path(b)) {
+    Ok(Literal(_)), Ok(Param(_)) -> order.Lt
+    Ok(Param(_)), Ok(Param(_)) -> order.Eq
+    Ok(_), Ok(Literal(_)) -> order.Gt
+    Error(_), Ok(_) -> order.Lt
+    Ok(_), Error(_) -> order.Gt
+    Error(_), Error(_) -> order.Eq
+  }
+}
+
+fn matches_first_segment(wrapper: Wrapper, seg: String) -> Bool {
+  case list.first(wrapper_path(wrapper)) {
+    Error(_) -> False
+    Ok(Literal(val)) -> val == seg
+    Ok(Param(_)) -> True
+  }
+}
+
 pub fn segs_to_route(
   routes: List(Wrapper),
   segs: List(String),
 ) -> Result(Wrapper, Nil) {
+  let route_map =
+    routes
+    |> list.map(fn(route) {
+      let path_string = path_to_string(wrapper_path(route))
+      #(path_string, route)
+    })
+    |> dict.from_list
+
+  let working_routes =
+    routes
+    |> list.map(fn(route) {
+      let path_string = path_to_string(wrapper_path(route))
+      #(path_string, route)
+    })
+
+  case do_segs_to_route(working_routes, segs) {
+    Ok(#(path_string, _)) -> dict.get(route_map, path_string)
+    Error(Nil) -> Error(Nil)
+  }
+}
+
+fn do_segs_to_route(
+  routes: List(#(String, Wrapper)),
+  segs: List(String),
+) -> Result(#(String, Wrapper), Nil) {
   case segs {
     [] -> {
-      list.find(routes, fn(route) {
-        let path = wrapper_path(route)
-        case path {
-          [] -> True
-          _ -> False
-        }
-      })
+      routes
+      |> list.find(fn(arg) { list.is_empty(wrapper_path(arg.1)) })
     }
     [seg, ..rest] -> {
       let matching_routes =
         routes
-        |> list.filter(fn(wrapper) {
-          case list.first(wrapper_path(wrapper)) {
-            Error(_) -> False
-            Ok(path_seg) -> {
-              case path_seg {
-                Literal(val) -> val == seg
-                Param(_) -> True
-              }
-            }
-          }
-        })
-        |> list.sort(fn(a, b) {
-          let x = list.first(wrapper_path(a))
-          let y = list.first(wrapper_path(b))
-          case x, y {
-            Ok(x), Ok(y) -> {
-              case x, y {
-                Literal(_), Param(_) -> order.Lt
-                Param(_), Param(_) -> order.Eq
-                _, Literal(_) -> order.Gt
-              }
-            }
-            Error(_), Ok(_) -> order.Lt
-            Ok(_), Error(_) -> order.Gt
-            Error(_), Error(_) -> order.Eq
-          }
-        })
-        |> list.map(fn(wrapper) {
-          let assert [_, ..path] = wrapper_path(wrapper)
-          case wrapper {
-            Wrapper0(route) -> Wrapper0(Route0(..route, path:))
-            Wrapper1(route) -> Wrapper1(Route1(..route, path:))
-            Wrapper2(route) -> Wrapper2(Route2(..route, path:))
-          }
-        })
+        |> list.filter(fn(arg) { matches_first_segment(arg.1, seg) })
+        |> list.sort(fn(a, b) { sort_by_first_segment(a.1, b.1) })
+        |> list.map(fn(arg) { #(arg.0, advance_path(arg.1)) })
+
       case matching_routes {
         [] -> Error(Nil)
         [route] -> Ok(route)
-        more -> {
-          segs_to_route(more, rest)
-        }
+        more -> do_segs_to_route(more, rest)
       }
     }
   }
@@ -173,24 +205,15 @@ pub type Wrapper {
 }
 
 pub type Route0 {
-  Route0(
-    name: String,
-    path: List(PathSegment),
-    handler: fn() -> element.Element(Nil),
-  )
+  Route0(path: List(PathSegment), handler: fn() -> element.Element(Nil))
 }
 
 pub type Route1 {
-  Route1(
-    name: String,
-    path: List(PathSegment),
-    handler: fn(String) -> element.Element(Nil),
-  )
+  Route1(path: List(PathSegment), handler: fn(String) -> element.Element(Nil))
 }
 
 pub type Route2 {
   Route2(
-    name: String,
     path: List(PathSegment),
     handler: fn(String, String) -> element.Element(Nil),
   )
@@ -198,7 +221,6 @@ pub type Route2 {
 
 pub type Route3 {
   Route3(
-    name: String,
     path: List(PathSegment),
     handler: fn(String, String, String) -> element.Element(Nil),
   )

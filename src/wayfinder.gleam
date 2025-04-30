@@ -1,20 +1,62 @@
 import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/option
 import gleam/order
 import gleam/string
 import gleam/uri
 import lustre/element
 
-pub fn validate(routes: List(Wrapper)) {
-  routes
-  |> list.each(fn(route) {
-    todo
-    // todo
+pub type Error {
+  MissingParameter
+  TooManyParameters
+  DuplicatePath
+}
+
+fn filter_params(path: List(PathSegment)) {
+  list.filter(path, fn(seg) {
+    case seg {
+      Literal(_) -> False
+      Param(_) -> True
+    }
   })
-  // TODO find invalid paths -> too few parameters
-  // TODO find invalid paths -> missing parameter name
-  // TODO validate unique route names
+}
+
+pub fn validate(routes: List(Wrapper)) -> List(Error) {
+  routes
+  |> list.map(fn(route) {
+    case route {
+      Wrapper0(route) -> {
+        let params = filter_params(route.path)
+        case params {
+          [_, ..] -> option.Some(TooManyParameters)
+          [] -> option.None
+        }
+      }
+      Wrapper1(route) -> {
+        let params = filter_params(route.path)
+        case params {
+          [_] -> option.None
+          [_, ..] -> option.Some(TooManyParameters)
+          [] -> option.Some(MissingParameter)
+        }
+      }
+      Wrapper2(route) -> {
+        let params = filter_params(route.path)
+        case params {
+          [_, _] -> option.None
+          [_, _, _, ..] -> option.Some(TooManyParameters)
+          _ -> option.Some(MissingParameter)
+        }
+      }
+    }
+  })
+  |> list.filter_map(fn(err) {
+    case err {
+      option.None -> Error(Nil)
+      option.Some(err) -> Ok(err)
+    }
+  })
 }
 
 pub type PathSegment {

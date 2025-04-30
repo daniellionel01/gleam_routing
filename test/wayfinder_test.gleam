@@ -38,6 +38,23 @@ pub fn route_to_path_test() {
   |> should.equal("/post/some_id/contacts/other_id")
 }
 
+pub fn validate_test() {
+  wayfinder.validate([
+    Wrapper1(Route1(wayfinder.path_to_segments("/some/$id"), handler1)),
+  ])
+  |> should.equal([])
+
+  wayfinder.validate([
+    Wrapper0(Route0(wayfinder.path_to_segments("/some/$id"), handler0)),
+  ])
+  |> should.equal([wayfinder.TooManyParameters])
+
+  wayfinder.validate([
+    Wrapper2(Route2(wayfinder.path_to_segments("/some/$id"), handler2)),
+  ])
+  |> should.equal([wayfinder.MissingParameter])
+}
+
 fn handler0() {
   html.div([], [])
 }

@@ -2,7 +2,7 @@ import gleam/erlang/process
 import lustre/element
 import lustre/element/html
 import mist
-import wayfinder.{Literal, Param, Route0, Route1, Wrapper0, Wrapper1, Wrapper2}
+import wayfinder.{Wrapper0, Wrapper1}
 import wisp
 import wisp/wisp_mist
 
@@ -28,32 +28,16 @@ fn handle_request(req: wisp.Request) {
   use req <- middleware(req)
 
   let segs = wisp.path_segments(req)
-  let route = wayfinder.segs_to_route(routes, segs)
-  case route {
+  let response = wayfinder.segs_to_handler(segs, routes())
+
+  case response {
     Error(_) -> wisp.not_found()
-    Ok(route) -> {
-      case route {
-        Wrapper0(route) -> {
-          route.handler()
-          |> serve_html
-        }
-        Wrapper1(route) -> {
-          let assert Ok(#(p1)) = wayfinder.get_params1(route, segs)
-          route.handler(p1)
-          |> serve_html
-        }
-        Wrapper2(route) -> {
-          let assert Ok(#(p1, p2)) = wayfinder.get_params2(route, segs)
-          route.handler(p1, p2)
-          |> serve_html
-        }
-      }
-    }
+    Ok(response) -> serve_html(response)
   }
 }
 
 pub fn main() -> Nil {
-  wayfinder.validate(routes)
+  wayfinder.validate(routes())
 
   wisp.configure_logger()
   let secret_key_base = wisp.random_string(64)
@@ -68,28 +52,29 @@ pub fn main() -> Nil {
 }
 
 pub fn home_handler() {
-  html.div([], [])
+  html.div([], [html.text("home")])
 }
 
 pub fn post_all_handler() {
-  html.div([], [])
+  html.div([], [html.text("all posts")])
 }
 
-pub fn post_handler(_id: String) {
-  html.div([], [])
+pub fn post_handler(id: String) {
+  html.div([], [html.text("post: " <> id)])
 }
 
-pub const home_route = Route0([], home_handler)
+pub fn home_route() {
+  wayfinder.make_route0("/", home_handler)
+}
 
-pub const post_all_route = Route0(
-  [Literal("post"), Literal("all")],
-  post_all_handler,
-)
+pub fn post_all_route() {
+  wayfinder.make_route0("/post/all", post_all_handler)
+}
 
-pub const post_route = Route1([Literal("post"), Param("id")], post_handler)
+pub fn post_route() {
+  wayfinder.make_route1("/post/$id", post_handler)
+}
 
-pub const routes = [
-  Wrapper0(home_route),
-  Wrapper0(post_all_route),
-  Wrapper1(post_route),
-]
+pub fn routes() {
+  [Wrapper0(home_route()), Wrapper0(post_all_route()), Wrapper1(post_route())]
+}

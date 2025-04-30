@@ -51,6 +51,35 @@ pub fn validate(routes: List(Wrapper(a))) -> List(Error) {
   })
 }
 
+pub fn segs_to_handler(
+  segs: List(String),
+  routes: List(Wrapper(a)),
+) -> Result(a, Nil) {
+  let route = segs_to_route(routes, segs)
+  case route {
+    Error(_) -> Error(Nil)
+    Ok(route) -> {
+      case route {
+        Wrapper0(route) -> {
+          Ok(route.handler())
+        }
+        Wrapper1(route) -> {
+          let assert Ok(#(p1)) = get_params1(route, segs)
+          Ok(route.handler(p1))
+        }
+        Wrapper2(route) -> {
+          let assert Ok(#(p1, p2)) = get_params2(route, segs)
+          Ok(route.handler(p1, p2))
+        }
+        Wrapper3(route) -> {
+          let assert Ok(#(p1, p2, p3)) = get_params3(route, segs)
+          Ok(route.handler(p1, p2, p3))
+        }
+      }
+    }
+  }
+}
+
 pub fn route_to_path0(route: Route0(a)) {
   let path =
     route.path

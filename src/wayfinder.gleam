@@ -116,6 +116,44 @@ pub fn route_to_path3(route: Route3(a), p1: String, p2: String, p3: String) {
   "/" <> path
 }
 
+pub fn make_route0(path: String, handler: fn() -> a) -> Route0(a) {
+  Route0(path_to_segments(path), handler)
+}
+
+pub fn make_route1(path: String, handler: fn(String) -> a) -> Route1(a) {
+  Route1(path_to_segments(path), handler)
+}
+
+pub fn make_route2(path: String, handler: fn(String, String) -> a) -> Route2(a) {
+  Route2(path_to_segments(path), handler)
+}
+
+pub fn make_wrap0(path: String, handler: fn() -> a) -> Wrapper(a) {
+  Wrapper0(make_route0(path, handler))
+}
+
+pub fn make_wrap1(path: String, handler: fn(String) -> a) -> Wrapper(a) {
+  Wrapper1(make_route1(path, handler))
+}
+
+pub fn make_wrap2(path: String, handler: fn(String, String) -> a) -> Wrapper(a) {
+  Wrapper2(make_route2(path, handler))
+}
+
+pub fn make_wrap3(
+  path: String,
+  handler: fn(String, String, String) -> a,
+) -> Wrapper(a) {
+  Wrapper3(make_route3(path, handler))
+}
+
+pub fn make_route3(
+  path: String,
+  handler: fn(String, String, String) -> a,
+) -> Route3(a) {
+  Route3(path_to_segments(path), handler)
+}
+
 pub fn segs_to_route(
   routes: List(Wrapper(a)),
   segs: List(String),

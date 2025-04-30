@@ -34,6 +34,7 @@ name | path | module import name | handler call signature
 
 Here is a real world example:
 ```txt
+home|/|
 ```
 
 ## FAQ

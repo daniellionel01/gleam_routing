@@ -51,28 +51,20 @@ pub fn main() -> Nil {
   process.sleep_forever()
 }
 
-pub fn home_handler() {
-  html.div([], [html.text("home")])
-}
-
-pub fn post_all_handler() {
-  html.div([], [html.text("all posts")])
-}
-
-pub fn post_handler(id: String) {
-  html.div([], [html.text("post: " <> id)])
-}
-
 pub fn home_route() {
-  wayfinder.make_route0("/", home_handler)
+  wayfinder.make_route0("/", fn() { html.div([], [html.text("home")]) })
 }
 
 pub fn post_all_route() {
-  wayfinder.make_route0("/post/all", post_all_handler)
+  wayfinder.make_route0("/post/all", fn() {
+    html.div([], [html.text("all posts")])
+  })
 }
 
 pub fn post_route() {
-  wayfinder.make_route1("/post/$id", post_handler)
+  wayfinder.make_route1("/post/$id", fn(id: String) {
+    html.div([], [html.text("post: " <> id)])
+  })
 }
 
 pub fn routes() {

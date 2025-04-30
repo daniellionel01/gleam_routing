@@ -16,11 +16,10 @@ $ gleam add wayfinder # install package
 $ gleam run -m wayfinder # run static analysis
 ```
 
-### Static Analysis
+```gleam
+```
 
-- find unused routes
-
-
+Checkout the [example](./example) for a minimal wisp web server setup.
 
 ## FAQ
 
@@ -28,10 +27,6 @@ $ gleam run -m wayfinder # run static analysis
 
 Yes! Feel free to use it in a serious project. I myself use it in side projects and at the company I work at in a production SaaS.
 
-### What features are missing?
-
-Loads! Here are some ideas for people to contribute:
-- Typesafe search query definitions
 
 ## License
 [Apache License, Version 2.0](./LICENSE)

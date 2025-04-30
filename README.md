@@ -5,7 +5,7 @@
 
 ## Introduction
 
-This is a package to generate a typesafe router for a gleam web server. It also provides static analysis to ensure you have not missed adding a route.
+This is a package to generate a typesafe router for a gleam web server.
 
 It also provides a typesafe method of linking to paths, so you don't link to invalid pages.
 
@@ -15,7 +15,6 @@ Zero dependencies and works for both `javascript` and `erlang` target!
 
 ```bash
 $ gleam add wayfinder # install package
-$ gleam run -m wayfinder # run static analysis
 ```
 
 ```gleam

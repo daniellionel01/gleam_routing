@@ -19,23 +19,15 @@ Works for both `javascript` and `erlang` target!
 
 ```bash
 $ gleam add wayfinder # install package
-$ gleam run -m wayfinder # generate router from definitions
-```
-
-Wayfinder will look for a `ROUTES.lst` file. That file contains all of your routes and has the following schema:
-```txt
-name | path | module import name | handler call signature
+$ gleam run -m wayfinder # run static analysis
 ```
 
 - `name` is the name of the route, which will be converted to a custom type in pascal case. So "home" becomes "Home"
 - `path` is fairly self explanatory. f.e. `/`, `/home`. Parameters are prefixed with a `$`, f.e. `/posts/$id`
-- `module import name` is what the generator will put at the top of the file together with an `import ...`. so if the handler is located in `src/app/pages.gleam` it should be `app/pages`
-- `handler call signature` this is how the generator calls the handler. it will take care of the parameters, so if the handler in the `app/pages` module is called `home_page`, then this should be `pages.home_page`
 
-Here is a real world example:
-```txt
-home|/|
-```
+### Static Analysis
+
+- find unused routes
 
 ## FAQ
 

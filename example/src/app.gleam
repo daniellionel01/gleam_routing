@@ -1,5 +1,4 @@
 import gleam/erlang/process
-import gleam/result
 import lustre/element
 import lustre/element/html
 import mist

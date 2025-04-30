@@ -1,6 +1,5 @@
 import gleeunit
 import gleeunit/should
-import lustre/element/html
 import wayfinder.{Route0, Route1, Route2, Wrapper0, Wrapper1, Wrapper2}
 
 pub fn main() -> Nil {
@@ -77,15 +76,15 @@ pub fn get_params2_test() {
 }
 
 fn handler0() {
-  html.div([], [])
+  "<div></div>"
 }
 
 fn handler1(_: String) {
-  html.div([], [])
+  "<div></div>"
 }
 
 fn handler2(_: String, _: String) {
-  html.div([], [])
+  "<div></div>"
 }
 
 fn home_route() {

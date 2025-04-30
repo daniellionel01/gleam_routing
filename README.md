@@ -1,24 +1,78 @@
-# routing
+# Wayfinder: Typesafe Routing in Gleam
 
-[![Package Version](https://img.shields.io/hexpm/v/routing)](https://hex.pm/packages/routing)
-[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/routing/)
+[![Package Version](https://img.shields.io/hexpm/v/wayfinder)](https://hex.pm/packages/wayfinder)
+[![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/wayfinder/)
 
-```sh
-gleam add routing@1
+## Introduction
+
+This is a package to generate a typesafe router for a gleam web server.
+
+It also provides a typesafe method of linking to paths, so you don't link to invalid pages.
+
+Zero dependencies and works for both `javascript` and `erlang` target!
+
+## Usage
+
+```bash
+$ gleam add wayfinder # install package
 ```
-```gleam
-import routing
 
-pub fn main() -> Nil {
-  // TODO: An example of the project in use
+```gleam
+import lustre/attribute
+import lustre/element/html
+import wayfinder
+import wisp
+
+// --- --- --- DEFINE ROUTES --- --- ---
+
+pub fn home_route() {
+  wayfinder.make_route0("/", fn() { html.div([], [html.text("home")]) })
+}
+
+pub fn post_all_route() {
+  wayfinder.make_route0("/post/all", post_all_handler())
+}
+
+pub fn post_route() {
+  wayfinder.make_route1("/post/$id", fn(id: String) {
+    html.div([], [html.text("post: " <> id)])
+  })
+}
+
+pub fn routes() {
+  [Wrapper0(home_route()), Wrapper0(post_all_route()), Wrapper1(post_route())]
+}
+
+// --- --- --- HANDLE WISP REQUESTS --- --- ---
+fn handle_request(req: wisp.Request) {
+  use req <- middleware(req)
+
+  let segs = wisp.path_segments(req)
+  let response = wayfinder.segs_to_handler(segs, routes())
+
+  case response {
+    Error(_) -> wisp.not_found()
+    Ok(response) -> serve_html(response)
+  }
+}
+
+// --- --- --- LINK PAGE IN HTML --- --- ---
+pub fn post_all_handler() {
+  html.div([], [
+    html.a([attribute.href(wayfinder.route_to_path1(post_route(), "two"))], [
+      html.text("post 1"),
+    ]),
+  ])
 }
 ```
 
-Further documentation can be found at <https://hexdocs.pm/routing>.
+Checkout the [example](./example) for a minimal wisp web server setup.
 
-## Development
+## FAQ
 
-```sh
-gleam run   # Run the project
-gleam test  # Run the tests
-```
+### Is this production ready?
+
+Yes! Feel free to use it in a serious project. I myself use it in side projects and at the company I work at in a production SaaS.
+
+## License
+[Apache License, Version 2.0](./LICENSE)

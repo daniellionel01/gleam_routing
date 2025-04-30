@@ -11,6 +11,13 @@ It also provides a typesafe method of linking to paths, so you don't link to inv
 
 Zero dependencies and works for both `javascript` and `erlang` target!
 
+## Features
+
+- Typesafe handling of pages of request path segments
+- Typesafe navigation for hrefs
+- Typesafe url prameters
+- Typesafe search queries
+
 ## Usage
 
 ```bash

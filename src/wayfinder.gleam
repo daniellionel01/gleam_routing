@@ -106,7 +106,6 @@ pub fn segs_to_route(
       })
     }
     [seg, ..rest] -> {
-      // TODO -> sort matching routes by literal or param match
       let matching_routes =
         routes
         |> list.filter(fn(wrapper) {

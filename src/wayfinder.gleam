@@ -140,6 +140,12 @@ pub fn segs_to_route(
   routes: List(Wrapper),
   segs: List(String),
 ) -> Result(Wrapper, Nil) {
+  // Since we're modifying the path inside of the routes list,
+  // we're going to store it as a tuple that converts the path segments
+  // into a unique path id (f.e. "/post/$id")
+  // Then after we've found a matching route (which is going to have an empty path)
+  // we can turn it back into the original route by matching the unique path id
+
   let route_map =
     routes
     |> list.map(fn(route) {

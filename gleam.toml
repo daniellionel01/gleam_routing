@@ -1,6 +1,11 @@
 name = "wayfinder"
 version = "1.0.0"
 
+description = "Typesafe Routing in Gleam"
+licences = ["Apache-2.0"]
+
+repository = { type = "github", user = "daniellionel01", repo = "wayfinder" }
+
 [dependencies]
 gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 

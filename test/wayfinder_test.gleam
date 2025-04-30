@@ -55,6 +55,27 @@ pub fn validate_test() {
   |> should.equal([wayfinder.MissingParameter])
 }
 
+pub fn get_params1_test() {
+  wayfinder.get_params1(
+    Route1(wayfinder.path_to_segments("/some/$id"), handler1),
+    ["some", "two"],
+  )
+  |> should.equal(Ok(#("two")))
+
+  wayfinder.get_params1(Route1(wayfinder.path_to_segments("/some"), handler1), [
+    "some", "two",
+  ])
+  |> should.equal(Error(Nil))
+}
+
+pub fn get_params2_test() {
+  wayfinder.get_params2(
+    Route2(wayfinder.path_to_segments("/some/$id/other/$id2"), handler2),
+    ["some", "two", "other", "three"],
+  )
+  |> should.equal(Ok(#("two", "three")))
+}
+
 fn handler0() {
   html.div([], [])
 }

@@ -3,6 +3,7 @@ import gleam/int
 import gleam/list
 import gleam/option
 import gleam/order
+import gleam/set
 import gleam/string
 import gleam/uri
 import lustre/element
@@ -107,24 +108,6 @@ pub fn route_to_path2(route: Route2, p1: String, p2: String) {
     |> string.join("/")
     |> string.replace("$0", p1)
     |> string.replace("$1", p2)
-
-  "/" <> path
-}
-
-pub fn route_to_path3(route: Route3, p1: String, p2: String, p3: String) {
-  let path =
-    route.path
-    |> list.map_fold(0, fn(acc, seg) {
-      case seg {
-        Literal(val) -> #(acc, val)
-        Param(_) -> #(acc + 1, "$" <> int.to_string(acc))
-      }
-    })
-    |> fn(arg) { arg.1 }
-    |> string.join("/")
-    |> string.replace("$0", p1)
-    |> string.replace("$1", p2)
-    |> string.replace("$2", p3)
 
   "/" <> path
 }
@@ -249,6 +232,40 @@ pub fn path_to_segments(path: String) -> List(PathSegment) {
   })
 }
 
+fn param_seg_pair(route: Wrapper, segs: List(String)) {
+  wrapper_path(route)
+  |> list.zip(segs)
+  |> list.filter(fn(arg) {
+    let #(path, _) = arg
+
+    case path {
+      Literal(_) -> False
+      Param(_) -> True
+    }
+  })
+}
+
+pub fn get_params1(route: Route1, segs: List(String)) -> Result(#(String), Nil) {
+  let route = Wrapper1(route)
+  let combined = param_seg_pair(route, segs)
+  case combined {
+    [#(_, p1)] -> Ok(#(p1))
+    _ -> Error(Nil)
+  }
+}
+
+pub fn get_params2(
+  route: Route2,
+  segs: List(String),
+) -> Result(#(String, String), Nil) {
+  let route = Wrapper2(route)
+  let combined = param_seg_pair(route, segs)
+  case combined {
+    [#(_, p1), #(_, p2)] -> Ok(#(p1, p2))
+    _ -> Error(Nil)
+  }
+}
+
 pub type Wrapper {
   Wrapper0(Route0)
   Wrapper1(Route1)
@@ -267,12 +284,5 @@ pub type Route2 {
   Route2(
     path: List(PathSegment),
     handler: fn(String, String) -> element.Element(Nil),
-  )
-}
-
-pub type Route3 {
-  Route3(
-    path: List(PathSegment),
-    handler: fn(String, String, String) -> element.Element(Nil),
   )
 }

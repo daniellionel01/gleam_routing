@@ -1,4 +1,5 @@
 import gleam/erlang/process
+import lustre/attribute
 import lustre/element
 import lustre/element/html
 import mist
@@ -56,9 +57,7 @@ pub fn home_route() {
 }
 
 pub fn post_all_route() {
-  wayfinder.make_route0("/post/all", fn() {
-    html.div([], [html.text("all posts")])
-  })
+  wayfinder.make_route0("/post/all", post_all_handler)
 }
 
 pub fn post_route() {
@@ -69,4 +68,12 @@ pub fn post_route() {
 
 pub fn routes() {
   [Wrapper0(home_route()), Wrapper0(post_all_route()), Wrapper1(post_route())]
+}
+
+pub fn post_all_handler() {
+  html.div([], [
+    html.a([attribute.href(wayfinder.route_to_path1(post_route(), "two"))], [
+      html.text("post 1"),
+    ]),
+  ])
 }

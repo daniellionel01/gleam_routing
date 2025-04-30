@@ -17,6 +17,52 @@ $ gleam run -m wayfinder # run static analysis
 ```
 
 ```gleam
+import lustre/attribute
+import lustre/element/html
+import wayfinder
+import wisp
+
+// --- --- --- DEFINE ROUTES --- --- ---
+
+pub fn home_route() {
+  wayfinder.make_route0("/", fn() { html.div([], [html.text("home")]) })
+}
+
+pub fn post_all_route() {
+  wayfinder.make_route0("/post/all", post_all_handler())
+}
+
+pub fn post_route() {
+  wayfinder.make_route1("/post/$id", fn(id: String) {
+    html.div([], [html.text("post: " <> id)])
+  })
+}
+
+pub fn routes() {
+  [Wrapper0(home_route()), Wrapper0(post_all_route()), Wrapper1(post_route())]
+}
+
+// --- --- --- HANDLE WISP REQUESTS --- --- ---
+fn handle_request(req: wisp.Request) {
+  use req <- middleware(req)
+
+  let segs = wisp.path_segments(req)
+  let response = wayfinder.segs_to_handler(segs, routes())
+
+  case response {
+    Error(_) -> wisp.not_found()
+    Ok(response) -> serve_html(response)
+  }
+}
+
+// --- --- --- LINK PAGE IN HTML --- --- ---
+pub fn post_all_handler() {
+  html.div([], [
+    html.a([attribute.href(wayfinder.route_to_path1(post_route(), "two"))], [
+      html.text("post 1"),
+    ]),
+  ])
+}
 ```
 
 Checkout the [example](./example) for a minimal wisp web server setup.

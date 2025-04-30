@@ -16,12 +16,11 @@ $ gleam add wayfinder # install package
 $ gleam run -m wayfinder # run static analysis
 ```
 
-- `name` is the name of the route, which will be converted to a custom type in pascal case. So "home" becomes "Home"
-- `path` is fairly self explanatory. f.e. `/`, `/home`. Parameters are prefixed with a `$`, f.e. `/posts/$id`
-
 ### Static Analysis
 
 - find unused routes
+
+
 
 ## FAQ
 
@@ -33,7 +32,6 @@ Yes! Feel free to use it in a serious project. I myself use it in side projects 
 
 Loads! Here are some ideas for people to contribute:
 - Typesafe search query definitions
-- Create router definitions with gleam code
 
 ## License
 [Apache License, Version 2.0](./LICENSE)

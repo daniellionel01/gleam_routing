@@ -33,6 +33,14 @@ pub fn validate(routes: List(Wrapper(a))) -> List(Error) {
           _ -> option.Some(MissingParameter)
         }
       }
+      Wrapper3(route) -> {
+        let params = filter_params(route.path)
+        case params {
+          [_, _, _] -> option.None
+          [_, _, _, _, ..] -> option.Some(TooManyParameters)
+          _ -> option.Some(MissingParameter)
+        }
+      }
     }
   })
   |> list.filter_map(fn(err) {
@@ -86,6 +94,24 @@ pub fn route_to_path2(route: Route2(a), p1: String, p2: String) {
     |> string.join("/")
     |> string.replace("$0", p1)
     |> string.replace("$1", p2)
+
+  "/" <> path
+}
+
+pub fn route_to_path3(route: Route3(a), p1: String, p2: String, p3: String) {
+  let path =
+    route.path
+    |> list.map_fold(0, fn(acc, seg) {
+      case seg {
+        Literal(val) -> #(acc, val)
+        Param(_) -> #(acc + 1, "$" <> int.to_string(acc))
+      }
+    })
+    |> fn(arg) { arg.1 }
+    |> string.join("/")
+    |> string.replace("$0", p1)
+    |> string.replace("$1", p2)
+    |> string.replace("$2", p3)
 
   "/" <> path
 }
@@ -157,12 +183,25 @@ pub fn get_params2(
   }
 }
 
+pub fn get_params3(
+  route: Route3(a),
+  segs: List(String),
+) -> Result(#(String, String, String), Nil) {
+  let route = Wrapper3(route)
+  let combined = param_seg_pair(route, segs)
+  case combined {
+    [#(_, p1), #(_, p2), #(_, p3)] -> Ok(#(p1, p2, p3))
+    _ -> Error(Nil)
+  }
+}
+
 // --- --- --- PUBLIC TYPES --- --- ---
 
 pub type Wrapper(a) {
   Wrapper0(Route0(a))
   Wrapper1(Route1(a))
   Wrapper2(Route2(a))
+  Wrapper3(Route3(a))
 }
 
 pub type Route0(a) {
@@ -175,6 +214,10 @@ pub type Route1(a) {
 
 pub type Route2(a) {
   Route2(path: List(PathSegment), handler: fn(String, String) -> a)
+}
+
+pub type Route3(a) {
+  Route3(path: List(PathSegment), handler: fn(String, String, String) -> a)
 }
 
 pub type Error {
@@ -245,6 +288,7 @@ fn wrapper_path(wrapper: Wrapper(a)) {
     Wrapper0(route) -> route.path
     Wrapper1(route) -> route.path
     Wrapper2(route) -> route.path
+    Wrapper3(route) -> route.path
   }
 }
 
@@ -256,6 +300,7 @@ fn advance_path(wrapper: Wrapper(a)) -> Wrapper(a) {
         Wrapper0(route) -> Wrapper0(Route0(..route, path: path))
         Wrapper1(route) -> Wrapper1(Route1(..route, path: path))
         Wrapper2(route) -> Wrapper2(Route2(..route, path: path))
+        Wrapper3(route) -> Wrapper3(Route3(..route, path: path))
       }
     }
   }

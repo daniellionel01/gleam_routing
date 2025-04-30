@@ -6,10 +6,6 @@ gleam_stdlib = ">= 0.44.0 and < 2.0.0"
 gleam_erlang = ">= 0.34.0 and < 1.0.0"
 mist = ">= 4.0.7 and < 5.0.0"
 wisp = ">= 1.6.0 and < 2.0.0"
-lustre = ">= 5.0.2 and < 6.0.0"
-simplifile = ">= 2.2.1 and < 3.0.0"
-justin = ">= 1.0.1 and < 2.0.0"
-filepath = ">= 1.1.2 and < 2.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

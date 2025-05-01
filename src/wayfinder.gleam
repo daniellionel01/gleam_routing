@@ -157,8 +157,12 @@ pub fn route_to_path0(route: Route0(a, b), params: b) {
     params
     |> route.search.encode
     |> uri.query_to_string
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
 
-  "/" <> path <> "/" <> query
+  "/" <> path <> query
 }
 
 pub fn route_to_path1(route: Route1(a, b), params: b, p1: String) {
@@ -179,7 +183,12 @@ pub fn route_to_path1(route: Route1(a, b), params: b, p1: String) {
     |> route.search.encode
     |> uri.query_to_string
 
-  "/" <> path <> "/" <> query
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
 pub fn route_to_path2(route: Route2(a, b), params: b, p1: String, p2: String) {
@@ -201,7 +210,12 @@ pub fn route_to_path2(route: Route2(a, b), params: b, p1: String, p2: String) {
     |> route.search.encode
     |> uri.query_to_string
 
-  "/" <> path <> "/" <> query
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
 pub fn route_to_path3(
@@ -230,7 +244,12 @@ pub fn route_to_path3(
     |> route.search.encode
     |> uri.query_to_string
 
-  "/" <> path <> "/" <> query
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
 pub fn route_to_path4(
@@ -261,7 +280,12 @@ pub fn route_to_path4(
     |> route.search.encode
     |> uri.query_to_string
 
-  "/" <> path <> "/" <> query
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
 pub fn route_to_path5(
@@ -294,7 +318,12 @@ pub fn route_to_path5(
     |> route.search.encode
     |> uri.query_to_string
 
-  "/" <> path <> "/" <> query
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
 pub fn make_route0(

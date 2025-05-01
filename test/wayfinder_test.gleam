@@ -26,45 +26,53 @@ pub fn segs_to_route_test() {
 }
 
 pub fn route_to_path_test() {
-  wayfinder.route_to_path0(home_route(), [])
+  wayfinder.route_to_path0(home_route(), DefaultSearchParams([]))
   |> should.equal("/")
 
-  wayfinder.route_to_path0(post_all_route(), [])
+  wayfinder.route_to_path0(post_all_route(), DefaultSearchParams([]))
   |> should.equal("/post/all")
 
-  wayfinder.route_to_path1(post_route(), [], "some_id")
+  wayfinder.route_to_path0(post_all_route(), PostSearchParams("active"))
+  |> should.equal("/post/all?filter=active")
+
+  wayfinder.route_to_path1(post_route(), DefaultSearchParams([]), "some_id")
   |> should.equal("/post/some_id")
 
-  wayfinder.route_to_path2(contact_route(), [], "some_id", "other_id")
+  wayfinder.route_to_path2(
+    contact_route(),
+    DefaultSearchParams([]),
+    "some_id",
+    "other_id",
+  )
   |> should.equal("/post/some_id/contacts/other_id")
 }
 
 pub fn validate_test() {
   wayfinder.do_validate([
-    wayfinder.make_wrap1("/some/$id", params_decoder, handler1),
+    wayfinder.make_wrap1("/some/$id", search_params(), handler1),
   ])
   |> should.equal(Ok(Nil))
 
   wayfinder.do_validate([
-    wayfinder.make_wrap0("/some/$id", params_decoder, handler0),
+    wayfinder.make_wrap0("/some/$id", search_params(), handler0),
   ])
   |> should.equal(Error("too many parameters: /some/$id"))
 
   wayfinder.do_validate([
-    wayfinder.make_wrap2("/some/$id", params_decoder, handler2),
+    wayfinder.make_wrap2("/some/$id", search_params(), handler2),
   ])
   |> should.equal(Error("too few parameters: /some/$id"))
 }
 
 pub fn get_params1_test() {
   wayfinder.get_params1(
-    wayfinder.make_route1("/some/$id", params_decoder, handler1),
+    wayfinder.make_route1("/some/$id", search_params(), handler1),
     ["some", "two"],
   )
   |> should.equal(Ok(#("two")))
 
   wayfinder.get_params1(
-    wayfinder.make_route1("/some", params_decoder, handler1),
+    wayfinder.make_route1("/some", search_params(), handler1),
     ["some", "two"],
   )
   |> should.equal(Error(Nil))
@@ -72,63 +80,71 @@ pub fn get_params1_test() {
 
 pub fn get_params2_test() {
   wayfinder.get_params2(
-    wayfinder.make_route2("/some/$id/other/$id2", params_decoder, handler2),
+    wayfinder.make_route2("/some/$id/other/$id2", search_params(), handler2),
     ["some", "two", "other", "three"],
   )
   |> should.equal(Ok(#("two", "three")))
 }
 
-fn post_all_handler(params: PostSearchParams) {
-  "<div>filter: " <> params.filter <> "</div>"
+fn post_all_handler(params: SearchParams) {
+  let filter = case params {
+    DefaultSearchParams(_) -> ""
+    PostSearchParams(filter) -> filter
+  }
+  "<div>filter: " <> filter <> "</div>"
 }
 
-fn handler0(_params: wayfinder.DefaultSearchParams) {
+fn handler0(_params: SearchParams) {
   "<div></div>"
 }
 
-fn handler1(_params: wayfinder.DefaultSearchParams, _: String) {
+fn handler1(_params: SearchParams, _: String) {
   "<div></div>"
 }
 
-fn handler2(_params: wayfinder.DefaultSearchParams, _: String, _: String) {
+fn handler2(_params: SearchParams, _: String, _: String) {
   "<div></div>"
 }
 
-type PostSearchParams {
+type SearchParams {
+  DefaultSearchParams(wayfinder.DefaultSearchParams)
   PostSearchParams(filter: String)
 }
 
-fn post_search_params() {
+fn search_params() -> wayfinder.SearchParams(SearchParams) {
   wayfinder.SearchParams(
     decode: fn(params) {
       let d = dict.from_list(params)
-      use filter <- result.try(dict.get(d, "filter"))
-      Ok(PostSearchParams(filter))
+      case dict.get(d, "filter") {
+        Error(_) -> Ok(DefaultSearchParams(params))
+        Ok(filter) -> Ok(PostSearchParams(filter))
+      }
     },
-    encode: fn(params) { [#("filter", params.filter)] },
+    encode: fn(params) {
+      case params {
+        DefaultSearchParams(params) -> params
+        PostSearchParams(filter) -> [#("filter", filter)]
+      }
+    },
   )
 }
 
 fn home_route() {
-  wayfinder.make_route0("/", wayfinder.default_search_params(), handler0)
+  wayfinder.make_route0("/", search_params(), handler0)
 }
 
 fn post_all_route() {
-  wayfinder.make_route0("/post/all", post_search_params(), post_all_handler)
+  wayfinder.make_route0("/post/all", search_params(), post_all_handler)
 }
 
 fn post_route() {
-  wayfinder.make_route1(
-    "/post/$id",
-    wayfinder.default_search_params(),
-    handler1,
-  )
+  wayfinder.make_route1("/post/$id", search_params(), handler1)
 }
 
-pub fn contact_route() {
+fn contact_route() {
   wayfinder.make_route2(
     "/post/$post_id/contacts/$contact_id",
-    wayfinder.default_search_params(),
+    search_params(),
     handler2,
   )
 }

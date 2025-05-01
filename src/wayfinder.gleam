@@ -1,69 +1,75 @@
 import gleam/dict
-import gleam/dynamic/decode
 import gleam/int
 import gleam/list
-import gleam/option
 import gleam/order
 import gleam/string
 import gleam/uri
 
-pub fn validate(routes: List(Wrapper(a, b))) -> List(Error) {
+pub fn validate(routes: List(Wrapper(a, b))) -> Nil {
+  case do_validate(routes) {
+    Error(msg) -> panic as msg
+    Ok(_) -> Nil
+  }
+}
+
+pub fn do_validate(routes: List(Wrapper(a, b))) -> Result(Nil, String) {
   routes
-  |> list.map(fn(route) {
+  |> list.try_each(fn(route) {
     case route {
       Wrapper0(route) -> {
         let params = filter_params(route.path)
         case params {
-          [_, ..] -> option.Some(TooManyParameters)
-          [] -> option.None
+          [_, ..] -> {
+            Error("too many parameters: " <> path_to_string(route.path))
+          }
+          [] -> Ok(Nil)
         }
       }
       Wrapper1(route) -> {
         let params = filter_params(route.path)
         case params {
-          [_] -> option.None
-          [_, ..] -> option.Some(TooManyParameters)
-          [] -> option.Some(MissingParameter)
+          [_] -> Ok(Nil)
+          [_, ..] ->
+            Error("too many parameters: " <> path_to_string(route.path))
+          [] -> Error("too few parameters: " <> path_to_string(route.path))
         }
       }
       Wrapper2(route) -> {
         let params = filter_params(route.path)
         case params {
-          [_, _] -> option.None
-          [_, _, _, ..] -> option.Some(TooManyParameters)
-          _ -> option.Some(MissingParameter)
+          [_, _] -> Ok(Nil)
+          [_, _, _, ..] ->
+            Error("too many parameters: " <> path_to_string(route.path))
+          _ -> Error("too few parameters: " <> path_to_string(route.path))
         }
       }
       Wrapper3(route) -> {
         let params = filter_params(route.path)
         case params {
-          [_, _, _] -> option.None
-          [_, _, _, _, ..] -> option.Some(TooManyParameters)
-          _ -> option.Some(MissingParameter)
+          [_, _, _] -> Ok(Nil)
+          [_, _, _, _, ..] ->
+            Error("too many parameters: " <> path_to_string(route.path))
+          _ -> Error("too few parameters: " <> path_to_string(route.path))
         }
       }
       Wrapper4(route) -> {
         let params = filter_params(route.path)
         case params {
-          [_, _, _, _] -> option.None
-          [_, _, _, _, _, ..] -> option.Some(TooManyParameters)
-          _ -> option.Some(MissingParameter)
+          [_, _, _, _] -> Ok(Nil)
+          [_, _, _, _, _, ..] ->
+            Error("too many parameters: " <> path_to_string(route.path))
+          _ -> Error("too few parameters: " <> path_to_string(route.path))
         }
       }
       Wrapper5(route) -> {
         let params = filter_params(route.path)
         case params {
-          [_, _, _, _, _] -> option.None
-          [_, _, _, _, _, _, ..] -> option.Some(TooManyParameters)
-          _ -> option.Some(MissingParameter)
+          [_, _, _, _, _] -> Ok(Nil)
+          [_, _, _, _, _, _, ..] ->
+            Error("too many parameters: " <> path_to_string(route.path))
+          _ -> Error("too few parameters: " <> path_to_string(route.path))
         }
       }
-    }
-  })
-  |> list.filter_map(fn(err) {
-    case err {
-      option.None -> Error(Nil)
-      option.Some(err) -> Ok(err)
     }
   })
 }
@@ -506,12 +512,6 @@ pub type Route5(a, b) {
     params_decoder: ParamsDecoder(b),
     handler: fn(b, String, String, String, String, String) -> a,
   )
-}
-
-pub type Error {
-  MissingParameter
-  TooManyParameters
-  DuplicatePath
 }
 
 pub type PathSegment {

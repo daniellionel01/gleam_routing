@@ -11,12 +11,9 @@ It also provides a typesafe method of linking to paths, so you don't link to inv
 
 Zero dependencies and works for both `javascript` and `erlang` target!
 
-## Features
+### "Typesafe" Disclaimer
 
-- Typesafe handling of pages of request path segments
-- Typesafe navigation for hrefs
-- Typesafe url prameters
-- Typesafe search queries
+In theory, this library is not fully typesafe, since you could pass arbitrary strings into the route and are not guaranteed to have matching arguments. For example you could make `/profile/$id` a route2. However this is why this library also includes a `validate` function, which traverses your path and checks if it has the exact number of arguments based on the path segments.
 
 ## Usage
 
@@ -48,6 +45,13 @@ pub fn post_route() {
 
 pub fn routes() {
   [Wrapper0(home_route()), Wrapper0(post_all_route()), Wrapper1(post_route())]
+}
+
+// --- --- --- VALIDATING ROUTE PATHS --- --- ---
+pub fn main() {
+  wayfinder.validate(routes())
+
+  // ... rest of your code ...
 }
 
 // --- --- --- HANDLE WISP REQUESTS --- --- ---

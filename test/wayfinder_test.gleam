@@ -38,62 +38,81 @@ pub fn route_to_path_test() {
 }
 
 pub fn validate_test() {
-  wayfinder.validate([wayfinder.make_wrap1("/some/$id", handler1)])
-  |> should.equal([])
+  wayfinder.do_validate([
+    wayfinder.make_wrap1("/some/$id", params_decoder, handler1),
+  ])
+  |> should.equal(Ok(Nil))
 
-  wayfinder.validate([wayfinder.make_wrap0("/some/$id", handler0)])
-  |> should.equal([wayfinder.TooManyParameters])
+  wayfinder.do_validate([
+    wayfinder.make_wrap0("/some/$id", params_decoder, handler0),
+  ])
+  |> should.equal(Error("too many parameters: /some/$id"))
 
-  wayfinder.validate([wayfinder.make_wrap2("/some/$id", handler2)])
-  |> should.equal([wayfinder.MissingParameter])
+  wayfinder.do_validate([
+    wayfinder.make_wrap2("/some/$id", params_decoder, handler2),
+  ])
+  |> should.equal(Error("too few parameters: /some/$id"))
 }
 
 pub fn get_params1_test() {
-  wayfinder.get_params1(wayfinder.make_route1("/some/$id", handler1), [
-    "some", "two",
-  ])
+  wayfinder.get_params1(
+    wayfinder.make_route1("/some/$id", params_decoder, handler1),
+    ["some", "two"],
+  )
   |> should.equal(Ok(#("two")))
 
-  wayfinder.get_params1(wayfinder.make_route1("/some", handler1), [
-    "some", "two",
-  ])
+  wayfinder.get_params1(
+    wayfinder.make_route1("/some", params_decoder, handler1),
+    ["some", "two"],
+  )
   |> should.equal(Error(Nil))
 }
 
 pub fn get_params2_test() {
   wayfinder.get_params2(
-    wayfinder.make_route2("/some/$id/other/$id2", handler2),
+    wayfinder.make_route2("/some/$id/other/$id2", params_decoder, handler2),
     ["some", "two", "other", "three"],
   )
   |> should.equal(Ok(#("two", "three")))
 }
 
-fn handler0() {
+fn handler0(_params: Params) {
   "<div></div>"
 }
 
-fn handler1(_: String) {
+fn handler1(_params: Params, _: String) {
   "<div></div>"
 }
 
-fn handler2(_: String, _: String) {
+fn handler2(_params: Params, _: String, _: String) {
   "<div></div>"
+}
+
+type Params =
+  List(#(String, String))
+
+fn params_decoder(params: Params) {
+  Ok(params)
 }
 
 fn home_route() {
-  wayfinder.make_route0("/", handler0)
+  wayfinder.make_route0("/", params_decoder, handler0)
 }
 
 fn post_all_route() {
-  wayfinder.make_route0("/post/all", handler0)
+  wayfinder.make_route0("/post/all", params_decoder, handler0)
 }
 
 fn post_route() {
-  wayfinder.make_route1("/post/$id", handler1)
+  wayfinder.make_route1("/post/$id", params_decoder, handler1)
 }
 
 pub fn contact_route() {
-  wayfinder.make_route2("/post/$post_id/contacts/$contact_id", handler2)
+  wayfinder.make_route2(
+    "/post/$post_id/contacts/$contact_id",
+    params_decoder,
+    handler2,
+  )
 }
 
 fn routes() {

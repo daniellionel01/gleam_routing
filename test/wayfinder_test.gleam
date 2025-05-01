@@ -87,10 +87,7 @@ pub fn get_params2_test() {
 }
 
 fn post_all_handler(params: SearchParams) {
-  let filter = case params {
-    DefaultSearchParams(_) -> ""
-    PostSearchParams(filter) -> filter
-  }
+  let assert PostSearchParams(filter) = params
   "<div>filter: " <> filter <> "</div>"
 }
 

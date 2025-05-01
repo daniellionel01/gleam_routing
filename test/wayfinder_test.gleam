@@ -1,5 +1,4 @@
 import gleam/dict
-import gleam/result
 import gleeunit
 import gleeunit/should
 import wayfinder.{Wrapper0, Wrapper1, Wrapper2}

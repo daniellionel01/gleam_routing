@@ -3,7 +3,6 @@ import gleam/dynamic
 import gleam/dynamic/decode
 import gleam/erlang/process
 import gleam/int
-import gleam/result
 import lustre/attribute
 import lustre/element
 import lustre/element/html

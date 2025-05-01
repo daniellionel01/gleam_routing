@@ -22,37 +22,74 @@ $ gleam add wayfinder # install package
 ```
 
 ```gleam
+import gleam/dynamic
+import gleam/dynamic/decode
+import gleam/int
 import lustre/attribute
 import lustre/element/html
 import wayfinder
-import wisp
+
+// --- --- --- DECODE HELPER --- --- ---
+
+fn strict_int() -> decode.Decoder(Int) {
+  decode.string
+  |> decode.then(fn(s) {
+    case int.parse(s) {
+      Ok(i) -> decode.success(i)
+      Error(_) -> decode.failure(0, "Integer")
+    }
+  })
+}
 
 // --- --- --- DEFINE ROUTES --- --- ---
 
 pub type SearchParams {
   Default(List(#(String, String)))
   PostAll(filter: String)
+  PostPaginated(page: Int, per_page: Int)
 }
+
 pub fn make_search_params() -> wayfinder.SearchParams(SearchParams) {
   wayfinder.SearchParams(
     decode: fn(params) {
-      let d = dict.from_list(params)
-      case dict.get(d, "filter") {
+      let post_all_decoder = {
+        use filter <- decode.field("filter", decode.string)
+        decode.success(PostAll(filter))
+      }
+      let post_paginated_decoder = {
+        use page <- decode.field("page", strict_int())
+        use per_page <- decode.field("per_page", strict_int())
+        decode.success(PostPaginated(page, per_page))
+      }
+      let combined = decode.one_of(post_all_decoder, [post_paginated_decoder])
+
+      let result =
+        dict.from_list(params)
+        |> dynamic.from
+        |> decode.run(combined)
+
+      case result {
         Error(_) -> Ok(Default(params))
-        Ok(filter) -> Ok(PostAll(filter))
+        Ok(result) -> Ok(result)
       }
     },
     encode: fn(params) {
       case params {
         Default(params) -> params
         PostAll(filter) -> [#("filter", filter)]
+        PostPaginated(page, per_page) -> [
+          #("page", int.to_string(page)),
+          #("per_page", int.to_string(per_page)),
+        ]
       }
     },
   )
 }
 
 pub fn home_route() {
-  wayfinder.make_route0("/", make_search_params(), fn() { html.div([], [html.text("home")]) })
+  wayfinder.make_route0("/", make_search_params(), fn() {
+    html.div([], [html.text("home")])
+  })
 }
 
 pub fn post_all_route() {
@@ -72,7 +109,6 @@ pub fn routes() {
 // --- --- --- VALIDATING ROUTE PATHS --- --- ---
 pub fn main() {
   wayfinder.validate(routes())
-
   // ... rest of your code ...
 }
 

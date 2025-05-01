@@ -29,16 +29,38 @@ import wisp
 
 // --- --- --- DEFINE ROUTES --- --- ---
 
+pub type SearchParams {
+  Default(List(#(String, String)))
+  PostAll(filter: String)
+}
+pub fn make_search_params() -> wayfinder.SearchParams(SearchParams) {
+  wayfinder.SearchParams(
+    decode: fn(params) {
+      let d = dict.from_list(params)
+      case dict.get(d, "filter") {
+        Error(_) -> Ok(Default(params))
+        Ok(filter) -> Ok(PostAll(filter))
+      }
+    },
+    encode: fn(params) {
+      case params {
+        Default(params) -> params
+        PostAll(filter) -> [#("filter", filter)]
+      }
+    },
+  )
+}
+
 pub fn home_route() {
-  wayfinder.make_route0("/", fn() { html.div([], [html.text("home")]) })
+  wayfinder.make_route0("/", make_search_params(), fn() { html.div([], [html.text("home")]) })
 }
 
 pub fn post_all_route() {
-  wayfinder.make_route0("/post/all", post_all_handler())
+  wayfinder.make_route0("/post/all", make_search_params(), post_all_handler)
 }
 
 pub fn post_route() {
-  wayfinder.make_route1("/post/$id", fn(id: String) {
+  wayfinder.make_route1("/post/$id", make_search_params(), fn(id: String) {
     html.div([], [html.text("post: " <> id)])
   })
 }
@@ -59,7 +81,8 @@ fn handle_request(req: wisp.Request) {
   use req <- middleware(req)
 
   let segs = wisp.path_segments(req)
-  let response = wayfinder.segs_to_handler(segs, routes())
+  let query = wisp.get_query(req)
+  let response = wayfinder.segs_to_handler(segs, query, routes())
 
   case response {
     Error(_) -> wisp.not_found()
@@ -68,8 +91,11 @@ fn handle_request(req: wisp.Request) {
 }
 
 // --- --- --- LINK PAGE IN HTML --- --- ---
-pub fn post_all_handler() {
+pub fn post_all_handler(params: SearchParams) {
+  let assert PostAll(filter) = params
+
   html.div([], [
+    html.div([], [html.text("filter: " <> filter)]),
     html.a([attribute.href(wayfinder.route_to_path1(post_route(), "two"))], [
       html.text("post 1"),
     ]),

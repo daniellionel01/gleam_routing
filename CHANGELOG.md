@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.0.3 - 2025-05-01
+
+- Added query parameters to routes!
+
 ## v1.0.2 - 2025-05-01
 
 - Make validate function panic

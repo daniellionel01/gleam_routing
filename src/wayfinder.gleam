@@ -83,14 +83,10 @@ pub fn default_search_params() {
 
 pub fn segs_to_handler(
   segs: List(String),
-  query: String,
+  query_params: List(#(String, String)),
   routes: List(Wrapper(a, b)),
 ) -> Result(a, Nil) {
   let route = segs_to_route(routes, segs)
-  let query_params = case uri.parse_query(query) {
-    Ok(params) -> params
-    Error(_) -> []
-  }
 
   case route {
     Error(_) -> Error(Nil)

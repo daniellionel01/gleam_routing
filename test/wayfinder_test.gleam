@@ -24,10 +24,10 @@ pub fn segs_to_route_test() {
 }
 
 pub fn route_to_path_test() {
-  wayfinder.route_to_path0(home_route())
+  wayfinder.route_to_path0(home_route(), [])
   |> should.equal("/")
 
-  wayfinder.route_to_path0(post_all_route())
+  wayfinder.route_to_path0(post_all_route(), [])
   |> should.equal("/post/all")
 
   wayfinder.route_to_path1(post_route(), "some_id")

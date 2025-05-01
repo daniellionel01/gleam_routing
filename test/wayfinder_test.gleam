@@ -1,3 +1,5 @@
+import gleam/dict
+import gleam/result
 import gleeunit
 import gleeunit/should
 import wayfinder.{Wrapper0, Wrapper1, Wrapper2}
@@ -30,10 +32,10 @@ pub fn route_to_path_test() {
   wayfinder.route_to_path0(post_all_route(), [])
   |> should.equal("/post/all")
 
-  wayfinder.route_to_path1(post_route(), "some_id")
+  wayfinder.route_to_path1(post_route(), [], "some_id")
   |> should.equal("/post/some_id")
 
-  wayfinder.route_to_path2(contact_route(), "some_id", "other_id")
+  wayfinder.route_to_path2(contact_route(), [], "some_id", "other_id")
   |> should.equal("/post/some_id/contacts/other_id")
 }
 
@@ -76,41 +78,57 @@ pub fn get_params2_test() {
   |> should.equal(Ok(#("two", "three")))
 }
 
-fn handler0(_params: Params) {
+fn post_all_handler(params: PostSearchParams) {
+  "<div>filter: " <> params.filter <> "</div>"
+}
+
+fn handler0(_params: wayfinder.DefaultSearchParams) {
   "<div></div>"
 }
 
-fn handler1(_params: Params, _: String) {
+fn handler1(_params: wayfinder.DefaultSearchParams, _: String) {
   "<div></div>"
 }
 
-fn handler2(_params: Params, _: String, _: String) {
+fn handler2(_params: wayfinder.DefaultSearchParams, _: String, _: String) {
   "<div></div>"
 }
 
-type Params =
-  List(#(String, String))
+type PostSearchParams {
+  PostSearchParams(filter: String)
+}
 
-fn params_decoder(params: Params) {
-  Ok(params)
+fn post_search_params() {
+  wayfinder.SearchParams(
+    decode: fn(params) {
+      let d = dict.from_list(params)
+      use filter <- result.try(dict.get(d, "filter"))
+      Ok(PostSearchParams(filter))
+    },
+    encode: fn(params) { [#("filter", params.filter)] },
+  )
 }
 
 fn home_route() {
-  wayfinder.make_route0("/", params_decoder, handler0)
+  wayfinder.make_route0("/", wayfinder.default_search_params(), handler0)
 }
 
 fn post_all_route() {
-  wayfinder.make_route0("/post/all", params_decoder, handler0)
+  wayfinder.make_route0("/post/all", post_search_params(), post_all_handler)
 }
 
 fn post_route() {
-  wayfinder.make_route1("/post/$id", params_decoder, handler1)
+  wayfinder.make_route1(
+    "/post/$id",
+    wayfinder.default_search_params(),
+    handler1,
+  )
 }
 
 pub fn contact_route() {
   wayfinder.make_route2(
     "/post/$post_id/contacts/$contact_id",
-    params_decoder,
+    wayfinder.default_search_params(),
     handler2,
   )
 }

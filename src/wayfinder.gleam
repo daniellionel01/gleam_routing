@@ -74,6 +74,13 @@ pub fn do_validate(routes: List(Wrapper(a, b))) -> Result(Nil, String) {
   })
 }
 
+pub type DefaultSearchParams =
+  List(#(String, String))
+
+pub fn default_search_params() {
+  SearchParams(decode: fn(params) { Ok(params) }, encode: fn(params) { params })
+}
+
 pub fn segs_to_handler(
   segs: List(String),
   query: String,
@@ -154,7 +161,7 @@ pub fn route_to_path0(route: Route0(a, b), params: b) {
   "/" <> path <> "/" <> query
 }
 
-pub fn route_to_path1(route: Route1(a, b), p1: String, params: b) {
+pub fn route_to_path1(route: Route1(a, b), params: b, p1: String) {
   let path =
     route.path
     |> list.map_fold(0, fn(acc, seg) {
@@ -175,7 +182,7 @@ pub fn route_to_path1(route: Route1(a, b), p1: String, params: b) {
   "/" <> path <> "/" <> query
 }
 
-pub fn route_to_path2(route: Route2(a, b), p1: String, p2: String, params: b) {
+pub fn route_to_path2(route: Route2(a, b), params: b, p1: String, p2: String) {
   let path =
     route.path
     |> list.map_fold(0, fn(acc, seg) {
@@ -199,10 +206,10 @@ pub fn route_to_path2(route: Route2(a, b), p1: String, p2: String, params: b) {
 
 pub fn route_to_path3(
   route: Route3(a, b),
+  params: b,
   p1: String,
   p2: String,
   p3: String,
-  params: b,
 ) {
   let path =
     route.path
@@ -228,11 +235,11 @@ pub fn route_to_path3(
 
 pub fn route_to_path4(
   route: Route4(a, b),
+  params: b,
   p1: String,
   p2: String,
   p3: String,
   p4: String,
-  params: b,
 ) {
   let path =
     route.path
@@ -259,12 +266,12 @@ pub fn route_to_path4(
 
 pub fn route_to_path5(
   route: Route5(a, b),
+  params: b,
   p1: String,
   p2: String,
   p3: String,
   p4: String,
   p5: String,
-  params: b,
 ) {
   let path =
     route.path

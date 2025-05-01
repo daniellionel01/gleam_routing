@@ -1,5 +1,9 @@
 import gleam/dict
+import gleam/dynamic
+import gleam/dynamic/decode
 import gleam/erlang/process
+import gleam/int
+import gleam/result
 import lustre/attribute
 import lustre/element
 import lustre/element/html
@@ -56,22 +60,52 @@ pub fn main() -> Nil {
 
 pub type SearchParams {
   Default(List(#(String, String)))
-  PostAllParams(filter: String)
+  PostAll(filter: String)
+  PostPaginated(page: Int, per_page: Int)
+}
+
+fn strict_int() -> decode.Decoder(Int) {
+  decode.string
+  |> decode.then(fn(s) {
+    case int.parse(s) {
+      Ok(i) -> decode.success(i)
+      Error(_) -> decode.failure(0, "Integer")
+    }
+  })
 }
 
 pub fn make_search_params() -> wayfinder.SearchParams(SearchParams) {
   wayfinder.SearchParams(
     decode: fn(params) {
-      let d = dict.from_list(params)
-      case dict.get(d, "filter") {
+      let post_all_decoder = {
+        use filter <- decode.field("filter", decode.string)
+        decode.success(PostAll(filter))
+      }
+      let post_paginated_decoder = {
+        use page <- decode.field("page", strict_int())
+        use per_page <- decode.field("per_page", strict_int())
+        decode.success(PostPaginated(page, per_page))
+      }
+      let combined = decode.one_of(post_all_decoder, [post_paginated_decoder])
+
+      let result =
+        dict.from_list(params)
+        |> dynamic.from
+        |> decode.run(combined)
+
+      case result {
         Error(_) -> Ok(Default(params))
-        Ok(filter) -> Ok(PostAllParams(filter))
+        Ok(result) -> Ok(result)
       }
     },
     encode: fn(params) {
       case params {
         Default(params) -> params
-        PostAllParams(filter) -> [#("filter", filter)]
+        PostAll(filter) -> [#("filter", filter)]
+        PostPaginated(page, per_page) -> [
+          #("page", int.to_string(page)),
+          #("per_page", int.to_string(per_page)),
+        ]
       }
     },
   )
@@ -98,7 +132,7 @@ pub fn routes() {
 }
 
 pub fn post_all_handler(params: SearchParams) {
-  let assert PostAllParams(filter) = params
+  let assert PostAll(filter) = params
 
   html.div([], [
     html.div([], [html.text("filter: " <> filter)]),

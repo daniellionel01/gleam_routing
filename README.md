@@ -47,6 +47,13 @@ pub fn routes() {
   [Wrapper0(home_route()), Wrapper0(post_all_route()), Wrapper1(post_route())]
 }
 
+// --- --- --- VALIDATING ROUTE PATHS --- --- ---
+pub fn main() {
+  wayfinder.validate(routes())
+
+  // ... rest of your code ...
+}
+
 // --- --- --- HANDLE WISP REQUESTS --- --- ---
 fn handle_request(req: wisp.Request) {
   use req <- middleware(req)

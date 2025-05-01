@@ -5,14 +5,14 @@ import gleam/order
 import gleam/string
 import gleam/uri
 
-pub fn validate(routes: List(Wrapper(a))) -> Nil {
+pub fn validate(routes: List(Wrapper(a, b))) -> Nil {
   case do_validate(routes) {
     Error(msg) -> panic as msg
     Ok(_) -> Nil
   }
 }
 
-pub fn do_validate(routes: List(Wrapper(a))) -> Result(Nil, String) {
+pub fn do_validate(routes: List(Wrapper(a, b))) -> Result(Nil, String) {
   routes
   |> list.try_each(fn(route) {
     case route {
@@ -74,44 +74,71 @@ pub fn do_validate(routes: List(Wrapper(a))) -> Result(Nil, String) {
   })
 }
 
+pub type DefaultSearchParams =
+  List(#(String, String))
+
+pub fn default_search_params() {
+  SearchParams(decode: fn(params) { Ok(params) }, encode: fn(params) { params })
+}
+
 pub fn segs_to_handler(
   segs: List(String),
-  routes: List(Wrapper(a)),
+  query_params: List(#(String, String)),
+  routes: List(Wrapper(a, b)),
 ) -> Result(a, Nil) {
   let route = segs_to_route(routes, segs)
+
   case route {
     Error(_) -> Error(Nil)
     Ok(route) -> {
       case route {
         Wrapper0(route) -> {
-          Ok(route.handler())
+          case route.search.decode(query_params) {
+            Error(_) -> Error(Nil)
+            Ok(params) -> Ok(route.handler(params))
+          }
         }
         Wrapper1(route) -> {
           let assert Ok(#(p1)) = get_params1(route, segs)
-          Ok(route.handler(p1))
+          case route.search.decode(query_params) {
+            Error(_) -> Error(Nil)
+            Ok(params) -> Ok(route.handler(params, p1))
+          }
         }
         Wrapper2(route) -> {
           let assert Ok(#(p1, p2)) = get_params2(route, segs)
-          Ok(route.handler(p1, p2))
+          case route.search.decode(query_params) {
+            Error(_) -> Error(Nil)
+            Ok(params) -> Ok(route.handler(params, p1, p2))
+          }
         }
         Wrapper3(route) -> {
           let assert Ok(#(p1, p2, p3)) = get_params3(route, segs)
-          Ok(route.handler(p1, p2, p3))
+          case route.search.decode(query_params) {
+            Error(_) -> Error(Nil)
+            Ok(params) -> Ok(route.handler(params, p1, p2, p3))
+          }
         }
         Wrapper4(route) -> {
           let assert Ok(#(p1, p2, p3, p4)) = get_params4(route, segs)
-          Ok(route.handler(p1, p2, p3, p4))
+          case route.search.decode(query_params) {
+            Error(_) -> Error(Nil)
+            Ok(params) -> Ok(route.handler(params, p1, p2, p3, p4))
+          }
         }
         Wrapper5(route) -> {
           let assert Ok(#(p1, p2, p3, p4, p5)) = get_params5(route, segs)
-          Ok(route.handler(p1, p2, p3, p4, p5))
+          case route.search.decode(query_params) {
+            Error(_) -> Error(Nil)
+            Ok(params) -> Ok(route.handler(params, p1, p2, p3, p4, p5))
+          }
         }
       }
     }
   }
 }
 
-pub fn route_to_path0(route: Route0(a)) {
+pub fn route_to_path0(route: Route0(a, b), params: b) {
   let path =
     route.path
     |> list.map(fn(seg) {
@@ -122,10 +149,19 @@ pub fn route_to_path0(route: Route0(a)) {
     })
     |> string.join("/")
 
-  "/" <> path
+  let query =
+    params
+    |> route.search.encode
+    |> uri.query_to_string
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
-pub fn route_to_path1(route: Route1(a), p1: String) {
+pub fn route_to_path1(route: Route1(a, b), params: b, p1: String) {
   let path =
     route.path
     |> list.map_fold(0, fn(acc, seg) {
@@ -138,10 +174,20 @@ pub fn route_to_path1(route: Route1(a), p1: String) {
     |> string.join("/")
     |> string.replace("$0", p1)
 
-  "/" <> path
+  let query =
+    params
+    |> route.search.encode
+    |> uri.query_to_string
+
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
-pub fn route_to_path2(route: Route2(a), p1: String, p2: String) {
+pub fn route_to_path2(route: Route2(a, b), params: b, p1: String, p2: String) {
   let path =
     route.path
     |> list.map_fold(0, fn(acc, seg) {
@@ -155,10 +201,26 @@ pub fn route_to_path2(route: Route2(a), p1: String, p2: String) {
     |> string.replace("$0", p1)
     |> string.replace("$1", p2)
 
-  "/" <> path
+  let query =
+    params
+    |> route.search.encode
+    |> uri.query_to_string
+
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
-pub fn route_to_path3(route: Route3(a), p1: String, p2: String, p3: String) {
+pub fn route_to_path3(
+  route: Route3(a, b),
+  params: b,
+  p1: String,
+  p2: String,
+  p3: String,
+) {
   let path =
     route.path
     |> list.map_fold(0, fn(acc, seg) {
@@ -173,11 +235,22 @@ pub fn route_to_path3(route: Route3(a), p1: String, p2: String, p3: String) {
     |> string.replace("$1", p2)
     |> string.replace("$2", p3)
 
-  "/" <> path
+  let query =
+    params
+    |> route.search.encode
+    |> uri.query_to_string
+
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
 pub fn route_to_path4(
-  route: Route4(a),
+  route: Route4(a, b),
+  params: b,
   p1: String,
   p2: String,
   p3: String,
@@ -198,11 +271,22 @@ pub fn route_to_path4(
     |> string.replace("$2", p3)
     |> string.replace("$3", p4)
 
-  "/" <> path
+  let query =
+    params
+    |> route.search.encode
+    |> uri.query_to_string
+
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
 pub fn route_to_path5(
-  route: Route5(a),
+  route: Route5(a, b),
+  params: b,
   p1: String,
   p2: String,
   p3: String,
@@ -225,79 +309,119 @@ pub fn route_to_path5(
     |> string.replace("$3", p4)
     |> string.replace("$4", p5)
 
-  "/" <> path
+  let query =
+    params
+    |> route.search.encode
+    |> uri.query_to_string
+
+  let query = case query {
+    "" -> ""
+    query -> "?" <> query
+  }
+
+  "/" <> path <> query
 }
 
-pub fn make_route0(path: String, handler: fn() -> a) -> Route0(a) {
-  Route0(path_to_segments(path), handler)
+pub fn make_route0(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b) -> a,
+) -> Route0(a, b) {
+  Route0(path_to_segments(path), search, handler)
 }
 
-pub fn make_route1(path: String, handler: fn(String) -> a) -> Route1(a) {
-  Route1(path_to_segments(path), handler)
+pub fn make_route1(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b, String) -> a,
+) -> Route1(a, b) {
+  Route1(path_to_segments(path), search, handler)
 }
 
-pub fn make_route2(path: String, handler: fn(String, String) -> a) -> Route2(a) {
-  Route2(path_to_segments(path), handler)
+pub fn make_route2(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b, String, String) -> a,
+) -> Route2(a, b) {
+  Route2(path_to_segments(path), search, handler)
 }
 
 pub fn make_route3(
   path: String,
-  handler: fn(String, String, String) -> a,
-) -> Route3(a) {
-  Route3(path_to_segments(path), handler)
+  search: SearchParams(b),
+  handler: fn(b, String, String, String) -> a,
+) -> Route3(a, b) {
+  Route3(path_to_segments(path), search, handler)
 }
 
 pub fn make_route4(
   path: String,
-  handler: fn(String, String, String, String) -> a,
-) -> Route4(a) {
-  Route4(path_to_segments(path), handler)
+  search: SearchParams(b),
+  handler: fn(b, String, String, String, String) -> a,
+) -> Route4(a, b) {
+  Route4(path_to_segments(path), search, handler)
 }
 
 pub fn make_route5(
   path: String,
-  handler: fn(String, String, String, String, String) -> a,
-) -> Route5(a) {
-  Route5(path_to_segments(path), handler)
+  search: SearchParams(b),
+  handler: fn(b, String, String, String, String, String) -> a,
+) -> Route5(a, b) {
+  Route5(path_to_segments(path), search, handler)
 }
 
-pub fn make_wrap0(path: String, handler: fn() -> a) -> Wrapper(a) {
-  Wrapper0(make_route0(path, handler))
+pub fn make_wrap0(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b) -> a,
+) -> Wrapper(a, b) {
+  Wrapper0(make_route0(path, search, handler))
 }
 
-pub fn make_wrap1(path: String, handler: fn(String) -> a) -> Wrapper(a) {
-  Wrapper1(make_route1(path, handler))
+pub fn make_wrap1(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b, String) -> a,
+) -> Wrapper(a, b) {
+  Wrapper1(make_route1(path, search, handler))
 }
 
-pub fn make_wrap2(path: String, handler: fn(String, String) -> a) -> Wrapper(a) {
-  Wrapper2(make_route2(path, handler))
+pub fn make_wrap2(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b, String, String) -> a,
+) -> Wrapper(a, b) {
+  Wrapper2(make_route2(path, search, handler))
 }
 
 pub fn make_wrap3(
   path: String,
-  handler: fn(String, String, String) -> a,
-) -> Wrapper(a) {
-  Wrapper3(make_route3(path, handler))
+  search: SearchParams(b),
+  handler: fn(b, String, String, String) -> a,
+) -> Wrapper(a, b) {
+  Wrapper3(make_route3(path, search, handler))
 }
 
 pub fn make_wrap4(
   path: String,
-  handler: fn(String, String, String, String) -> a,
-) -> Wrapper(a) {
-  Wrapper4(make_route4(path, handler))
+  search: SearchParams(b),
+  handler: fn(b, String, String, String, String) -> a,
+) -> Wrapper(a, b) {
+  Wrapper4(make_route4(path, search, handler))
 }
 
 pub fn make_wrap5(
   path: String,
-  handler: fn(String, String, String, String, String) -> a,
-) -> Wrapper(a) {
-  Wrapper5(make_route5(path, handler))
+  search: SearchParams(b),
+  handler: fn(b, String, String, String, String, String) -> a,
+) -> Wrapper(a, b) {
+  Wrapper5(make_route5(path, search, handler))
 }
 
 pub fn segs_to_route(
-  routes: List(Wrapper(a)),
+  routes: List(Wrapper(a, b)),
   segs: List(String),
-) -> Result(Wrapper(a), Nil) {
+) -> Result(Wrapper(a, b), Nil) {
   // Since we're modifying the path inside of the routes list,
   // we're going to store it as a tuple that converts the path segments
   // into a unique path id (f.e. "/post/$id")
@@ -338,7 +462,7 @@ pub fn path_to_segments(path: String) -> List(PathSegment) {
 }
 
 pub fn get_params1(
-  route: Route1(a),
+  route: Route1(a, b),
   segs: List(String),
 ) -> Result(#(String), Nil) {
   let route = Wrapper1(route)
@@ -350,7 +474,7 @@ pub fn get_params1(
 }
 
 pub fn get_params2(
-  route: Route2(a),
+  route: Route2(a, b),
   segs: List(String),
 ) -> Result(#(String, String), Nil) {
   let route = Wrapper2(route)
@@ -362,7 +486,7 @@ pub fn get_params2(
 }
 
 pub fn get_params3(
-  route: Route3(a),
+  route: Route3(a, b),
   segs: List(String),
 ) -> Result(#(String, String, String), Nil) {
   let route = Wrapper3(route)
@@ -374,7 +498,7 @@ pub fn get_params3(
 }
 
 pub fn get_params4(
-  route: Route4(a),
+  route: Route4(a, b),
   segs: List(String),
 ) -> Result(#(String, String, String, String), Nil) {
   let route = Wrapper4(route)
@@ -386,7 +510,7 @@ pub fn get_params4(
 }
 
 pub fn get_params5(
-  route: Route5(a),
+  route: Route5(a, b),
   segs: List(String),
 ) -> Result(#(String, String, String, String, String), Nil) {
   let route = Wrapper5(route)
@@ -400,42 +524,63 @@ pub fn get_params5(
 
 // --- --- --- PUBLIC TYPES --- --- ---
 
-pub type Wrapper(a) {
-  Wrapper0(Route0(a))
-  Wrapper1(Route1(a))
-  Wrapper2(Route2(a))
-  Wrapper3(Route3(a))
-  Wrapper4(Route4(a))
-  Wrapper5(Route5(a))
+pub type Wrapper(a, b) {
+  Wrapper0(Route0(a, b))
+  Wrapper1(Route1(a, b))
+  Wrapper2(Route2(a, b))
+  Wrapper3(Route3(a, b))
+  Wrapper4(Route4(a, b))
+  Wrapper5(Route5(a, b))
 }
 
-pub type Route0(a) {
-  Route0(path: List(PathSegment), handler: fn() -> a)
-}
-
-pub type Route1(a) {
-  Route1(path: List(PathSegment), handler: fn(String) -> a)
-}
-
-pub type Route2(a) {
-  Route2(path: List(PathSegment), handler: fn(String, String) -> a)
-}
-
-pub type Route3(a) {
-  Route3(path: List(PathSegment), handler: fn(String, String, String) -> a)
-}
-
-pub type Route4(a) {
-  Route4(
-    path: List(PathSegment),
-    handler: fn(String, String, String, String) -> a,
+pub type SearchParams(a) {
+  SearchParams(
+    decode: fn(List(#(String, String))) -> Result(a, Nil),
+    encode: fn(a) -> List(#(String, String)),
   )
 }
 
-pub type Route5(a) {
+pub type Route0(a, b) {
+  Route0(path: List(PathSegment), search: SearchParams(b), handler: fn(b) -> a)
+}
+
+pub type Route1(a, b) {
+  Route1(
+    path: List(PathSegment),
+    search: SearchParams(b),
+    handler: fn(b, String) -> a,
+  )
+}
+
+pub type Route2(a, b) {
+  Route2(
+    path: List(PathSegment),
+    search: SearchParams(b),
+    handler: fn(b, String, String) -> a,
+  )
+}
+
+pub type Route3(a, b) {
+  Route3(
+    path: List(PathSegment),
+    search: SearchParams(b),
+    handler: fn(b, String, String, String) -> a,
+  )
+}
+
+pub type Route4(a, b) {
+  Route4(
+    path: List(PathSegment),
+    search: SearchParams(b),
+    handler: fn(b, String, String, String, String) -> a,
+  )
+}
+
+pub type Route5(a, b) {
   Route5(
     path: List(PathSegment),
-    handler: fn(String, String, String, String, String) -> a,
+    search: SearchParams(b),
+    handler: fn(b, String, String, String, String, String) -> a,
   )
 }
 
@@ -446,7 +591,7 @@ pub type PathSegment {
 
 // --- --- --- UTILITY FNS --- --- ---
 
-fn param_seg_pair(route: Wrapper(a), segs: List(String)) {
+fn param_seg_pair(route: Wrapper(a, b), segs: List(String)) {
   wrapper_path(route)
   |> list.zip(segs)
   |> list.filter(fn(arg) {
@@ -460,9 +605,9 @@ fn param_seg_pair(route: Wrapper(a), segs: List(String)) {
 }
 
 fn do_segs_to_route(
-  routes: List(#(String, Wrapper(a))),
+  routes: List(#(String, Wrapper(a, b))),
   segs: List(String),
-) -> Result(#(String, Wrapper(a)), Nil) {
+) -> Result(#(String, Wrapper(a, b)), Nil) {
   case segs {
     [] -> {
       routes
@@ -496,7 +641,7 @@ fn path_to_string(path: List(PathSegment)) -> String {
   |> fn(path) { "/" <> path }()
 }
 
-fn wrapper_path(wrapper: Wrapper(a)) {
+fn wrapper_path(wrapper: Wrapper(a, b)) {
   case wrapper {
     Wrapper0(route) -> route.path
     Wrapper1(route) -> route.path
@@ -507,7 +652,7 @@ fn wrapper_path(wrapper: Wrapper(a)) {
   }
 }
 
-fn advance_path(wrapper: Wrapper(a)) -> Wrapper(a) {
+fn advance_path(wrapper: Wrapper(a, b)) -> Wrapper(a, b) {
   case wrapper_path(wrapper) {
     [] -> wrapper
     [_, ..path] -> {
@@ -523,7 +668,7 @@ fn advance_path(wrapper: Wrapper(a)) -> Wrapper(a) {
   }
 }
 
-fn sort_by_first_segment(a: Wrapper(a), b: Wrapper(a)) -> order.Order {
+fn sort_by_first_segment(a: Wrapper(a, b), b: Wrapper(a, b)) -> order.Order {
   case list.first(wrapper_path(a)), list.first(wrapper_path(b)) {
     Ok(Literal(_)), Ok(Param(_)) -> order.Lt
     Ok(Param(_)), Ok(Param(_)) -> order.Eq
@@ -534,7 +679,7 @@ fn sort_by_first_segment(a: Wrapper(a), b: Wrapper(a)) -> order.Order {
   }
 }
 
-fn matches_first_segment(wrapper: Wrapper(a), seg: String) -> Bool {
+fn matches_first_segment(wrapper: Wrapper(a, b), seg: String) -> Bool {
   case list.first(wrapper_path(wrapper)) {
     Error(_) -> False
     Ok(Literal(val)) -> val == seg

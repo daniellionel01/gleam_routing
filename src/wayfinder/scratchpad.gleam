@@ -20,6 +20,9 @@ pub fn do_validate(routes: List(Route(a, b))) -> Result(Nil, String) {
       Handler0(_) -> 0
       Handler1(_) -> 1
       Handler2(_) -> 2
+      Handler3(_) -> 3
+      Handler4(_) -> 4
+      Handler5(_) -> 5
     }
     let params = filter_params(route.path)
     let actual_count = list.length(params)
@@ -56,6 +59,18 @@ pub fn segs_to_handler(
         Handler2(handler) -> {
           let assert Ok(#(p1, p2)) = get_params2(route, segs)
           Ok(handler(search, p1, p2))
+        }
+        Handler3(handler) -> {
+          let assert Ok(#(p1, p2, p3)) = get_params3(route, segs)
+          Ok(handler(search, p1, p2, p3))
+        }
+        Handler4(handler) -> {
+          let assert Ok(#(p1, p2, p3, p4)) = get_params4(route, segs)
+          Ok(handler(search, p1, p2, p3, p4))
+        }
+        Handler5(handler) -> {
+          let assert Ok(#(p1, p2, p3, p4, p5)) = get_params5(route, segs)
+          Ok(handler(search, p1, p2, p3, p4, p5))
         }
       }
     }
@@ -108,6 +123,39 @@ pub fn route_to_path2(route: Route(a, b), search: b, p1: String, p2: String) {
   route_to_path(route, search, [p1, p2])
 }
 
+pub fn route_to_path3(
+  route: Route(a, b),
+  search: b,
+  p1: String,
+  p2: String,
+  p3: String,
+) {
+  route_to_path(route, search, [p1, p2, p3])
+}
+
+pub fn route_to_path4(
+  route: Route(a, b),
+  search: b,
+  p1: String,
+  p2: String,
+  p3: String,
+  p4: String,
+) {
+  route_to_path(route, search, [p1, p2, p3, p4])
+}
+
+pub fn route_to_path5(
+  route: Route(a, b),
+  search: b,
+  p1: String,
+  p2: String,
+  p3: String,
+  p4: String,
+  p5: String,
+) {
+  route_to_path(route, search, [p1, p2, p3, p4, p5])
+}
+
 pub fn make_route0(
   path: String,
   search: SearchParams(b),
@@ -133,6 +181,33 @@ pub fn make_route2(
 ) -> Route(a, b) {
   let path = path_to_segments(path)
   Route(path, search, Handler2(handler))
+}
+
+pub fn make_route3(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b, String, String, String) -> a,
+) -> Route(a, b) {
+  let path = path_to_segments(path)
+  Route(path, search, Handler3(handler))
+}
+
+pub fn make_route4(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b, String, String, String, String) -> a,
+) -> Route(a, b) {
+  let path = path_to_segments(path)
+  Route(path, search, Handler4(handler))
+}
+
+pub fn make_route5(
+  path: String,
+  search: SearchParams(b),
+  handler: fn(b, String, String, String, String, String) -> a,
+) -> Route(a, b) {
+  let path = path_to_segments(path)
+  Route(path, search, Handler5(handler))
 }
 
 pub fn segs_to_route(
@@ -194,6 +269,40 @@ pub fn get_params2(
   }
 }
 
+pub fn get_params3(
+  route: Route(a, b),
+  segs: List(String),
+) -> Result(#(String, String, String), Nil) {
+  let combined = param_seg_pair(route, segs)
+  case combined {
+    [#(_, p1), #(_, p2), #(_, p3)] -> Ok(#(p1, p2, p3))
+    _ -> Error(Nil)
+  }
+}
+
+pub fn get_params4(
+  route: Route(a, b),
+  segs: List(String),
+) -> Result(#(String, String, String, String), Nil) {
+  let combined = param_seg_pair(route, segs)
+  case combined {
+    [#(_, p1), #(_, p2), #(_, p3), #(_, p4)] -> Ok(#(p1, p2, p3, p4))
+    _ -> Error(Nil)
+  }
+}
+
+pub fn get_params5(
+  route: Route(a, b),
+  segs: List(String),
+) -> Result(#(String, String, String, String, String), Nil) {
+  let combined = param_seg_pair(route, segs)
+  case combined {
+    [#(_, p1), #(_, p2), #(_, p3), #(_, p4), #(_, p5)] ->
+      Ok(#(p1, p2, p3, p4, p5))
+    _ -> Error(Nil)
+  }
+}
+
 // --- --- --- PUBLIC TYPES --- --- ---
 
 pub type PathSegment {
@@ -212,6 +321,9 @@ pub type Handler(a, b) {
   Handler0(fn(b) -> a)
   Handler1(fn(b, String) -> a)
   Handler2(fn(b, String, String) -> a)
+  Handler3(fn(b, String, String, String) -> a)
+  Handler4(fn(b, String, String, String, String) -> a)
+  Handler5(fn(b, String, String, String, String, String) -> a)
 }
 
 pub type Route(a, b) {

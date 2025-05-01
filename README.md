@@ -11,6 +11,10 @@ It also provides a typesafe method of linking to paths, so you don't link to inv
 
 Zero dependencies and works for both `javascript` and `erlang` target!
 
+### "Typesafe" Disclaimer
+
+In theory, this library is not fully typesafe, since you could pass arbitrary strings into the route and are not guaranteed to have matching arguments. For example you could make `/profile/$id` a route2. However this is why this library also includes a `validate` function, which traverses your path and checks if it has the exact number of arguments based on the path segments.
+
 ## Usage
 
 ```bash

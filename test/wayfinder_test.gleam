@@ -38,14 +38,14 @@ pub fn route_to_path_test() {
 }
 
 pub fn validate_test() {
-  wayfinder.validate([wayfinder.make_wrap1("/some/$id", handler1)])
-  |> should.equal([])
+  wayfinder.do_validate([wayfinder.make_wrap1("/some/$id", handler1)])
+  |> should.equal(Ok(Nil))
 
-  wayfinder.validate([wayfinder.make_wrap0("/some/$id", handler0)])
-  |> should.equal([wayfinder.TooManyParameters])
+  wayfinder.do_validate([wayfinder.make_wrap0("/some/$id", handler0)])
+  |> should.equal(Error("too many parameters: /some/$id"))
 
-  wayfinder.validate([wayfinder.make_wrap2("/some/$id", handler2)])
-  |> should.equal([wayfinder.MissingParameter])
+  wayfinder.do_validate([wayfinder.make_wrap2("/some/$id", handler2)])
+  |> should.equal(Error("too few parameters: /some/$id"))
 }
 
 pub fn get_params1_test() {

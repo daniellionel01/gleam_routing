@@ -1,4 +1,5 @@
 # TODO
 
-- [ ] snapshot tests with birdie
+- [ ] simplify types?
 - [ ] typesafe search query definitions
+- [ ] snapshot tests with birdie

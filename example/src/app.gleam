@@ -101,7 +101,7 @@ pub fn post_all_handler(params: SearchParams) {
   let assert PostAllParams(filter) = params
 
   html.div([], [
-    html.text("filter: " <> filter),
+    html.div([], [html.text("filter: " <> filter)]),
     html.a(
       [
         attribute.href(wayfinder.route_to_path1(

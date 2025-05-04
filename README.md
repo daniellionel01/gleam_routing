@@ -23,11 +23,12 @@ $ gleam add wayfinder # install package
 
 ### Simple Example
 
-### Complex Example (with search parameters)
 
 <details>
 
-<summary>Code</summary>
+<summary>
+  <h3>Complex Example (with search parameters)</h3>
+</summary>
 
 ```gleam
 import gleam/dict

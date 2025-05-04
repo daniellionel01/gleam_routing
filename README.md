@@ -121,8 +121,7 @@ pub fn post_all_handler(_params: SearchParams) {
   ])
 }
 ```
-<details>
-
+</details>
 
 <details>
 

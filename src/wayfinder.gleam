@@ -1,432 +1,189 @@
-import gleam/dict
-import gleam/int
+import filepath
+import given
+import glance
 import gleam/list
-import gleam/order
-import gleam/result
 import gleam/string
-import gleam/uri
+import justin
+import simplifile
+import wayfinder/project
 
-pub fn validate(routes: List(Route(a, b))) -> Nil {
-  case do_validate(routes) {
-    Error(msg) -> panic as msg
-    Ok(_) -> Nil
-  }
+// [ ] TODO generate path -> route
+// [ ] TODO generate route -> path
+// [ ] TODO generate automatic encoder for search params
+// [ ] TODO validate path arguments
+
+pub type WayfinderError {
+  FileMissing
+  FileReadError
+  MissingRouteType
+  MissingRouteInstantiation
+  FileWriteError
 }
 
-pub fn do_validate(routes: List(Route(a, b))) -> Result(Nil, String) {
-  routes
-  |> list.try_each(fn(route) {
-    let expected_param_count = case route.handler {
-      Handler0(_) -> 0
-      Handler1(_) -> 1
-      Handler2(_) -> 2
-      Handler3(_) -> 3
-      Handler4(_) -> 4
-      Handler5(_) -> 5
-    }
-    let params = filter_params(route.path)
-    let actual_count = list.length(params)
-
-    case
-      actual_count > expected_param_count,
-      actual_count < expected_param_count
-    {
-      True, _ -> Error("too many parameters: " <> path_to_string(route.path))
-      _, True -> Error("too few parameters: " <> path_to_string(route.path))
-      _, _ -> Ok(Nil)
-    }
-  })
-}
-
-pub fn segs_to_handler(
-  segs: List(String),
-  query_params: List(#(String, String)),
-  routes: List(Route(a, b)),
-) -> Result(a, Nil) {
-  let route = segs_to_route(routes, segs)
-
-  case route {
-    Error(_) -> Error(Nil)
-    Ok(route) -> {
-      use search <- result.try(route.search.decode(query_params))
-
-      case route.handler {
-        Handler0(handler) -> Ok(handler(search))
-        Handler1(handler) -> {
-          let assert Ok(#(p1)) = get_params1(route, segs)
-          Ok(handler(search, p1))
-        }
-        Handler2(handler) -> {
-          let assert Ok(#(p1, p2)) = get_params2(route, segs)
-          Ok(handler(search, p1, p2))
-        }
-        Handler3(handler) -> {
-          let assert Ok(#(p1, p2, p3)) = get_params3(route, segs)
-          Ok(handler(search, p1, p2, p3))
-        }
-        Handler4(handler) -> {
-          let assert Ok(#(p1, p2, p3, p4)) = get_params4(route, segs)
-          Ok(handler(search, p1, p2, p3, p4))
-        }
-        Handler5(handler) -> {
-          let assert Ok(#(p1, p2, p3, p4, p5)) = get_params5(route, segs)
-          Ok(handler(search, p1, p2, p3, p4, p5))
-        }
-      }
-    }
-  }
-}
-
-pub fn route_to_path(
-  route: Route(a, b),
-  search: b,
-  params: List(String),
-) -> String {
-  let path =
-    route.path
-    |> list.map_fold(0, fn(acc, seg) {
-      case seg {
-        Literal(val) -> #(acc, val)
-        Param(_) -> #(acc + 1, "$" <> int.to_string(acc))
-      }
-    })
-    |> fn(arg) { arg.1 }
-    |> string.join("/")
-
-  let final_path =
-    index_fold(params, path, fn(path, param, i) {
-      string.replace(path, "$" <> int.to_string(i), param)
-    })
-
-  let query =
-    search
-    |> route.search.encode
-    |> uri.query_to_string
-
-  let query = case query {
-    "" -> ""
-    query -> "?" <> query
-  }
-
-  "/" <> final_path <> query
-}
-
-pub fn route_to_path0(route: Route(a, b), search: b) {
-  route_to_path(route, search, [])
-}
-
-pub fn route_to_path1(route: Route(a, b), search: b, p1: String) {
-  route_to_path(route, search, [p1])
-}
-
-pub fn route_to_path2(route: Route(a, b), search: b, p1: String, p2: String) {
-  route_to_path(route, search, [p1, p2])
-}
-
-pub fn route_to_path3(
-  route: Route(a, b),
-  search: b,
-  p1: String,
-  p2: String,
-  p3: String,
-) {
-  route_to_path(route, search, [p1, p2, p3])
-}
-
-pub fn route_to_path4(
-  route: Route(a, b),
-  search: b,
-  p1: String,
-  p2: String,
-  p3: String,
-  p4: String,
-) {
-  route_to_path(route, search, [p1, p2, p3, p4])
-}
-
-pub fn route_to_path5(
-  route: Route(a, b),
-  search: b,
-  p1: String,
-  p2: String,
-  p3: String,
-  p4: String,
-  p5: String,
-) {
-  route_to_path(route, search, [p1, p2, p3, p4, p5])
-}
-
-pub fn make_route0(
-  path: String,
-  search: SearchParams(b),
-  handler: fn(b) -> a,
-) -> Route(a, b) {
-  let path = path_to_segments(path)
-  Route(path, search, Handler0(handler))
-}
-
-pub fn make_route1(
-  path: String,
-  search: SearchParams(b),
-  handler: fn(b, String) -> a,
-) -> Route(a, b) {
-  let path = path_to_segments(path)
-  Route(path, search, Handler1(handler))
-}
-
-pub fn make_route2(
-  path: String,
-  search: SearchParams(b),
-  handler: fn(b, String, String) -> a,
-) -> Route(a, b) {
-  let path = path_to_segments(path)
-  Route(path, search, Handler2(handler))
-}
-
-pub fn make_route3(
-  path: String,
-  search: SearchParams(b),
-  handler: fn(b, String, String, String) -> a,
-) -> Route(a, b) {
-  let path = path_to_segments(path)
-  Route(path, search, Handler3(handler))
-}
-
-pub fn make_route4(
-  path: String,
-  search: SearchParams(b),
-  handler: fn(b, String, String, String, String) -> a,
-) -> Route(a, b) {
-  let path = path_to_segments(path)
-  Route(path, search, Handler4(handler))
-}
-
-pub fn make_route5(
-  path: String,
-  search: SearchParams(b),
-  handler: fn(b, String, String, String, String, String) -> a,
-) -> Route(a, b) {
-  let path = path_to_segments(path)
-  Route(path, search, Handler5(handler))
-}
-
-pub fn segs_to_route(
-  routes: List(Route(a, b)),
-  segs: List(String),
-) -> Result(Route(a, b), Nil) {
-  let route_map =
-    routes
-    |> list.map(fn(route) {
-      let path_string = path_to_string(route.path)
-      #(path_string, route)
-    })
-    |> dict.from_list
-
-  let working_routes =
-    routes
-    |> list.map(fn(route) {
-      let path_string = path_to_string(route.path)
-      #(path_string, route)
-    })
-
-  case do_segs_to_route(working_routes, segs) {
-    Ok(#(path_string, _)) -> dict.get(route_map, path_string)
-    Error(Nil) -> Error(Nil)
-  }
-}
-
-pub fn path_to_segments(path: String) -> List(PathSegment) {
-  path
-  |> uri.path_segments()
-  |> list.map(fn(seg) {
-    case seg {
-      "$" -> panic as { "missing parameter name for path " <> path }
-      "$" <> param -> Param(param)
-      val -> Literal(val)
-    }
-  })
-}
-
-pub fn get_params1(
-  route: Route(a, b),
-  segs: List(String),
-) -> Result(#(String), Nil) {
-  let combined = param_seg_pair(route, segs)
-  case combined {
-    [#(_, p1)] -> Ok(#(p1))
-    _ -> Error(Nil)
-  }
-}
-
-pub fn get_params2(
-  route: Route(a, b),
-  segs: List(String),
-) -> Result(#(String, String), Nil) {
-  let combined = param_seg_pair(route, segs)
-  case combined {
-    [#(_, p1), #(_, p2)] -> Ok(#(p1, p2))
-    _ -> Error(Nil)
-  }
-}
-
-pub fn get_params3(
-  route: Route(a, b),
-  segs: List(String),
-) -> Result(#(String, String, String), Nil) {
-  let combined = param_seg_pair(route, segs)
-  case combined {
-    [#(_, p1), #(_, p2), #(_, p3)] -> Ok(#(p1, p2, p3))
-    _ -> Error(Nil)
-  }
-}
-
-pub fn get_params4(
-  route: Route(a, b),
-  segs: List(String),
-) -> Result(#(String, String, String, String), Nil) {
-  let combined = param_seg_pair(route, segs)
-  case combined {
-    [#(_, p1), #(_, p2), #(_, p3), #(_, p4)] -> Ok(#(p1, p2, p3, p4))
-    _ -> Error(Nil)
-  }
-}
-
-pub fn get_params5(
-  route: Route(a, b),
-  segs: List(String),
-) -> Result(#(String, String, String, String, String), Nil) {
-  let combined = param_seg_pair(route, segs)
-  case combined {
-    [#(_, p1), #(_, p2), #(_, p3), #(_, p4), #(_, p5)] ->
-      Ok(#(p1, p2, p3, p4, p5))
-    _ -> Error(Nil)
-  }
-}
-
-// --- --- --- PUBLIC TYPES --- --- ---
+pub type SearchParams =
+  List(#(String, String))
 
 pub type PathSegment {
   Literal(val: String)
   Param(name: String)
 }
 
-pub type SearchParams(a) {
-  SearchParams(
-    decode: fn(List(#(String, String))) -> Result(a, Nil),
-    encode: fn(a) -> List(#(String, String)),
-  )
+type RouteDefinition =
+  #(glance.Variant, glance.Constant, List(PathSegment))
+
+const autogenerated_line = "// === === === CODE BELOW IS AUTO GENERATED === === ==="
+
+pub fn main() {
+  let result = generate()
+  echo result
 }
 
-pub type Handler(a, b) {
-  Handler0(fn(b) -> a)
-  Handler1(fn(b, String) -> a)
-  Handler2(fn(b, String, String) -> a)
-  Handler3(fn(b, String, String, String) -> a)
-  Handler4(fn(b, String, String, String, String) -> a)
-  Handler5(fn(b, String, String, String, String, String) -> a)
-}
+pub fn generate() -> Result(Nil, WayfinderError) {
+  let assert Ok(name) = project.name()
+  let module_path =
+    project.src()
+    |> filepath.join(name)
+    |> filepath.join("wayfinder.gleam")
 
-pub type Route(a, b) {
-  Route(
-    path: List(PathSegment),
-    search: SearchParams(b),
-    handler: Handler(a, b),
-  )
-}
+  let code = simplifile.read(module_path)
+  use code <- given.ok(code, fn(_) { Error(FileMissing) })
 
-// --- --- --- UTILITY FNS --- --- ---
+  let module = glance.module(code)
+  use module <- given.ok(module, fn(_) { Error(FileReadError) })
 
-fn param_seg_pair(route: Route(a, b), segs: List(String)) {
-  route.path
-  |> list.zip(segs)
-  |> list.filter(fn(arg) {
-    let #(path, _) = arg
+  let def_route_type =
+    list.find(module.custom_types, fn(t) {
+      let glance.CustomType(name, _, _, _, _) = t.definition
+      name == "Route"
+    })
 
-    case path {
-      Literal(_) -> False
-      Param(_) -> True
-    }
-  })
-}
+  use route_type <- given.ok(def_route_type, fn(_) { Error(MissingRouteType) })
+  let glance.Definition(_, route_type) = route_type
 
-fn do_segs_to_route(
-  routes: List(#(String, Route(a, b))),
-  segs: List(String),
-) -> Result(#(String, Route(a, b)), Nil) {
-  case segs {
-    [] -> {
-      routes
-      |> list.find(fn(arg) { list.is_empty({ arg.1 }.path) })
-    }
-    [seg, ..rest] -> {
-      let matching_routes =
-        routes
-        |> list.filter(fn(arg) { matches_first_segment(arg.1, seg) })
-        |> list.sort(fn(a, b) { sort_by_first_segment(a.1, b.1) })
-        |> list.map(fn(arg) { #(arg.0, advance_path(arg.1)) })
+  let routes_defs: List(RouteDefinition) =
+    route_type.variants
+    |> list.map(fn(v) {
+      let constant =
+        list.find(module.constants, fn(c) {
+          let glance.Constant(name, _, _, _) = c.definition
 
-      case matching_routes {
-        [] -> Error(Nil)
-        [route] -> Ok(route)
-        more -> do_segs_to_route(more, rest)
+          name == justin.snake_case(v.name) <> "_route"
+        })
+      case constant {
+        Error(_) -> panic as { "missing const for route " <> v.name }
+        Ok(constant) -> {
+          let constant = constant.definition
+
+          let path_string = case constant.value {
+            glance.Call(_, args) -> {
+              let assert [glance.UnlabelledField(glance.String(path)), ..] =
+                args
+              path
+            }
+            _ -> panic as { "could not extract path for route " <> v.name }
+          }
+
+          let path =
+            path_string
+            |> string.split("/")
+            |> list.drop(1)
+            |> list.map(fn(seg) {
+              case seg {
+                "$" <> name -> Param(name)
+                name -> Literal(name)
+              }
+            })
+
+          #(v, constant, path)
+        }
       }
-    }
-  }
-}
+    })
 
-fn path_to_string(path: List(PathSegment)) -> String {
-  path
-  |> list.map(fn(segment) {
-    case segment {
-      Literal(val) -> val
-      Param(name) -> "$" <> name
-    }
+  list.each(routes_defs, fn(d) { "" })
+
+  let segs_to_route_cases =
+    routes_defs
+    |> list.map(fn(route) {
+      //
+      ""
+    })
+    |> list.map(fn(str) { "    " <> str })
+    |> string.join("\n")
+
+  let segs_to_route =
+    "pub fn segs_to_route(segs: List(String)) -> Result(Route, Nil) {\n"
+    <> "  case segs {\n"
+    <> segs_to_route_cases
+    <> "    _ -> Error(Nil)\n"
+    <> "  }\n"
+    <> "}"
+
+  // pub fn route_to_path(route: Route) -> String {
+  //   case route {
+  //     Home() -> "/"
+  //     Profile(id) -> "/" <> "profile/" <> id
+  //   }
+  // }
+  let route_to_path =
+    routes_defs
+    |> list.map(fn(route) {
+      let name = justin.snake_case({ route.0 }.name)
+      let args =
+        route.2
+        |> list.filter(fn(seg) {
+          case seg {
+            Literal(_) -> False
+            Param(_) -> True
+          }
+        })
+        |> list.map(fn(arg) {
+          case arg {
+            Literal(_) -> ""
+            Param(name) -> justin.snake_case(name)
+          }
+        })
+        |> string.join(", ")
+
+      let path =
+        route.2
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(name) -> "\"" <> name <> "\""
+            Param(name) -> justin.snake_case(name)
+          }
+        })
+        |> string.join(" <> \"/\" <> ")
+
+      "pub fn "
+      <> name
+      <> "_path("
+      <> args
+      <> ") {\n"
+      <> "  "
+      <> "\"/\" <> "
+      <> path
+      <> "\n}"
+    })
+    |> list.map(fn(str) { str })
+    |> string.join("\n\n")
+
+  let keep = case string.split(code, autogenerated_line) {
+    [keep, _, ..] -> keep
+    [keep] -> keep
+    [] -> panic as "could not find code to keep in module"
+  }
+  let module_content =
+    string.trim(keep)
+    <> "\n\n"
+    <> autogenerated_line
+    <> "\n\n"
+    <> segs_to_route
+    <> "\n\n"
+    <> route_to_path
+
+  use _ <- given.ok(simplifile.write(module_path, module_content), fn(_) {
+    Error(FileWriteError)
   })
-  |> string.join("/")
-  |> fn(path) { "/" <> path }()
-}
 
-fn advance_path(route: Route(a, b)) -> Route(a, b) {
-  case route.path {
-    [] -> route
-    [_, ..path] -> {
-      Route(..route, path:)
-    }
-  }
-}
-
-fn sort_by_first_segment(a: Route(a, b), b: Route(a, b)) -> order.Order {
-  case list.first(a.path), list.first(b.path) {
-    Ok(Literal(_)), Ok(Param(_)) -> order.Lt
-    Ok(Param(_)), Ok(Param(_)) -> order.Eq
-    Ok(_), Ok(Literal(_)) -> order.Gt
-    Error(_), Ok(_) -> order.Lt
-    Ok(_), Error(_) -> order.Gt
-    Error(_), Error(_) -> order.Eq
-  }
-}
-
-fn matches_first_segment(route: Route(a, b), seg: String) -> Bool {
-  case list.first(route.path) {
-    Error(_) -> False
-    Ok(Literal(val)) -> val == seg
-    Ok(Param(_)) -> True
-  }
-}
-
-fn filter_params(path: List(PathSegment)) {
-  list.filter(path, fn(seg) {
-    case seg {
-      Literal(_) -> False
-      Param(_) -> True
-    }
-  })
-}
-
-fn index_fold(list, initial, fun) {
-  list.index_map(list, fn(item, index) { #(item, index) })
-  |> list.fold(initial, fn(acc, pair) {
-    let #(item, index) = pair
-    fun(acc, item, index)
-  })
+  Ok(Nil)
 }

@@ -7,7 +7,7 @@ import lustre/attribute
 import lustre/element
 import lustre/element/html
 import mist
-import wayfinder.{Wrapper0, Wrapper1}
+import wayfinder
 import wisp
 import wisp/wisp_mist
 
@@ -127,7 +127,7 @@ pub fn post_route() {
 }
 
 pub fn routes() {
-  [Wrapper0(home_route()), Wrapper0(post_all_route()), Wrapper1(post_route())]
+  [home_route(), post_all_route(), post_route()]
 }
 
 pub fn post_all_handler(params: SearchParams) {

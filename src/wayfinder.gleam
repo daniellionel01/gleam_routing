@@ -66,7 +66,6 @@ pub fn generate() -> Result(Nil, WayfinderError) {
       let constant =
         list.find(module.constants, fn(c) {
           let glance.Constant(name, _, _, _) = c.definition
-
           name == justin.snake_case(v.name) <> "_route"
         })
       case constant {
@@ -87,6 +86,12 @@ pub fn generate() -> Result(Nil, WayfinderError) {
             path_string
             |> string.split("/")
             |> list.drop(1)
+            |> list.filter(fn(seg) {
+              case seg {
+                "" -> False
+                _ -> True
+              }
+            })
             |> list.map(fn(seg) {
               case seg {
                 "$" <> name -> Param(name)
@@ -99,31 +104,60 @@ pub fn generate() -> Result(Nil, WayfinderError) {
       }
     })
 
-  list.each(routes_defs, fn(d) { "" })
+  list.each(routes_defs, fn(d) { echo d.2 })
 
   let segs_to_route_cases =
     routes_defs
     |> list.map(fn(route) {
-      //
-      ""
+      let route_name = justin.snake_case({ route.0 }.name)
+
+      let handler_name = route_name <> "_handler"
+
+      let match_left =
+        route.2
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(name) -> "\"" <> name <> "\""
+            Param(name) -> justin.snake_case(name)
+          }
+        })
+        |> string.join(", ")
+
+      let handler_args =
+        route.2
+        |> list.filter(fn(seg) {
+          case seg {
+            Literal(_) -> False
+            Param(_) -> True
+          }
+        })
+        |> list.map(fn(seg) {
+          case seg {
+            Literal(_) -> ""
+            Param(name) -> justin.snake_case(name)
+          }
+        })
+        |> string.join(", ")
+
+      "["
+      <> match_left
+      <> "] -> Ok("
+      <> handler_name
+      <> "(query,"
+      <> handler_args
+      <> "))"
     })
     |> list.map(fn(str) { "    " <> str })
     |> string.join("\n")
 
   let segs_to_route =
-    "pub fn segs_to_route(segs: List(String)) -> Result(Route, Nil) {\n"
+    "pub fn uri_to_handler(segs: List(String), query: List(#(String, String))) -> Result(String, Nil) {\n"
     <> "  case segs {\n"
     <> segs_to_route_cases
-    <> "    _ -> Error(Nil)\n"
+    <> "\n_ -> Error(Nil)\n"
     <> "  }\n"
     <> "}"
 
-  // pub fn route_to_path(route: Route) -> String {
-  //   case route {
-  //     Home() -> "/"
-  //     Profile(id) -> "/" <> "profile/" <> id
-  //   }
-  // }
   let route_to_path =
     routes_defs
     |> list.map(fn(route) {
@@ -153,6 +187,11 @@ pub fn generate() -> Result(Nil, WayfinderError) {
           }
         })
         |> string.join(" <> \"/\" <> ")
+
+      let path = case path {
+        "" -> "\"\""
+        _ -> path
+      }
 
       "pub fn "
       <> name

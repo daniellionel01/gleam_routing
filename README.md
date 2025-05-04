@@ -24,7 +24,7 @@ $ gleam add wayfinder # install package
 <details>
 
 <summary>
-  <p>Simple Example</p>
+  Simple Example
 </summary>
 
 ```gleam
@@ -124,7 +124,7 @@ pub fn post_all_handler(_params: SearchParams) {
 </details>
 <details>
 <summary>
-  <p>Complex Example (with search parameters)</p>
+  Complex Example (with search parameters)
 </summary>
 
 ```gleam

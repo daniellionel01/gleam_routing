@@ -21,6 +21,14 @@ In theory, this library is not fully typesafe, since you could pass arbitrary st
 $ gleam add wayfinder # install package
 ```
 
+### Simple Example
+
+### Complex Example (with search parameters)
+
+<details>
+
+<summary>Code</summary>
+
 ```gleam
 import gleam/dict
 import gleam/dynamic
@@ -163,6 +171,8 @@ pub fn post_all_handler(params: SearchParams) {
   ])
 }
 ```
+
+</details>
 
 Checkout the [example](./example) for a minimal wisp web server setup.
 

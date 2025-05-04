@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.0 - 2025-05-04
+
+Type simplification! There is now no need to wrap routes in a `Wrapper` type anymore. Rest of the api was left untouched.
+
 ## v1.1.0 - 2025-05-01
 
 Breaking changes! Routes API now takes additional SearchParams encoder and decoder, that are passed to the handler.

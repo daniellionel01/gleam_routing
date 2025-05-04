@@ -272,7 +272,7 @@ pub fn post_all_handler(params: SearchParams) {
 
 </details>
 
-Checkout the [example](./example) for a minimal wisp web server setup.
+Checkout the [example](https://github.com/daniellionel01/wayfinder/tree/main/example) for a minimal wisp web server setup.
 
 ## FAQ
 

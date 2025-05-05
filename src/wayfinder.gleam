@@ -1,6 +1,7 @@
 import filepath
 import given
 import glance
+import gleam/function
 import gleam/list
 import gleam/string
 import justin
@@ -104,8 +105,6 @@ pub fn generate() -> Result(Nil, WayfinderError) {
       }
     })
 
-  list.each(routes_defs, fn(d) { echo d.2 })
-
   let segs_to_route_cases =
     routes_defs
     |> list.map(fn(route) {
@@ -187,11 +186,12 @@ pub fn generate() -> Result(Nil, WayfinderError) {
           }
         })
         |> string.join(" <> \"/\" <> ")
-
-      let path = case path {
-        "" -> "\"\""
-        _ -> path
-      }
+        |> function.tap(fn(path) {
+          case path {
+            "" -> "\"\""
+            _ -> path
+          }
+        })
 
       "pub fn "
       <> name

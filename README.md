@@ -1,4 +1,4 @@
-# Wayfinder: Typesafe Routing in Gleam
+# 🧭 Wayfinder: Typesafe Routing in Gleam
 
 [![Package Version](https://img.shields.io/hexpm/v/wayfinder)](https://hex.pm/packages/wayfinder)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/wayfinder/)

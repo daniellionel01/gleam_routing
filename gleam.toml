@@ -1,7 +1,7 @@
 name = "wayfinder"
 version = "1.2.0"
 
-description = "Typesafe Routing in Gleam"
+description = "🧭 Typesafe Routing in Gleam"
 licences = ["Apache-2.0"]
 
 repository = { type = "github", user = "daniellionel01", repo = "wayfinder" }

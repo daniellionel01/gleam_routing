@@ -1,6 +1,5 @@
 # TODO
 
-- [ ] simplify types?
-- [ ] search params as option
-- [ ] typesafe search query definitions
+- [x] simplify types?
+- [ ] improve search param api (option?)
 - [ ] snapshot tests with birdie

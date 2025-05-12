@@ -2,6 +2,8 @@
 
 [![Package Version](https://img.shields.io/hexpm/v/wayfinder)](https://hex.pm/packages/wayfinder)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-ffaff3)](https://hexdocs.pm/wayfinder/)
+![erlang](https://img.shields.io/badge/target-erlang-a2003e)
+![javascript](https://img.shields.io/badge/target-javascript-f1e05a)
 
 ## Introduction
 
